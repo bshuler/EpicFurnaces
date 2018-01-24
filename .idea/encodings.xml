@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/API/EpicFurnacesAPI.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/API/MCUpdate.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/EpicFurnaces.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Events/BlockListeners.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Events/ChatListeners.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Events/FurnaceListeners.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Events/InteractListeners.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Events/InventoryListeners.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Events/LoginListeners.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Furnace/Furnace.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Handlers/CommandHandler.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/ASkyBlockHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/FactionsHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/FactionsOldHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/GriefPreventionHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/HookHandler.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/Hooks.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/KingdomsHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/PlotSquaredHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/RedProtectHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/USkyBlockHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Hooks/WorldGuardHook.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Lang.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/References.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Utils/ConfigWrapper.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Utils/Methods.java" charset="UTF-16" />
+    <file url="file://$PROJECT_DIR$/src/com/songoda/epicfurnaces/Utils/SettingsManager.java" charset="UTF-16" />
+  </component>
+</project>
