@@ -1,6 +1,6 @@
 name: EpicFurnaces
 description: EpicFurnaces
-version: 3
+version: 3.1
 depend: [Arconix]
 softdepend: [PlotSquared, GriefPrevention, USkyBlock, SkyBlock, WorldGuard, Factions]
 main: com.songoda.epicfurnaces.EpicFurnaces
