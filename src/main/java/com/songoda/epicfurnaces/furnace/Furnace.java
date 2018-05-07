@@ -2,7 +2,6 @@ package com.songoda.epicfurnaces.furnace;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Lang;
 import com.songoda.epicfurnaces.utils.Debugger;
 import com.songoda.epicfurnaces.utils.Methods;
 import net.milkbowl.vault.economy.Economy;
@@ -13,6 +12,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.FurnaceSmeltEvent;
 import org.bukkit.inventory.FurnaceInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -22,136 +22,73 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by songoda on 3/7/2017.
  */
 public class Furnace {
-    public Location location = null;
-    private String locationStr = null;
-    private Block block = null;
 
-    private EpicFurnaces plugin = EpicFurnaces.pl();
+    private Location location;
+    private Level level;
 
-    public Furnace(String loc) {
-        try {
-            defineBlockInformation(loc);
-        } catch (Exception e) {
-            Debugger.runReport(e);
-        }
+    private String nickname;
+
+    private int uses, tolevel;
+
+    private List<String> accessList = new ArrayList<>();
+
+    private final EpicFurnaces instance = EpicFurnaces.getInstance();
+
+    public Furnace(Location location, Level level, String nickname, int uses, int tolevel, List<String> accessList) {
+        this.location = location;
+        this.level = level;
+        this.uses = uses;
+        this.tolevel = tolevel;
+        this.nickname = nickname;
+        this.accessList = accessList;
     }
 
-    private void defineBlockInformation(String loc) {
-        try {
-            //String name = plugin.getConfig().getString("data.block." + loc);
-            locationStr = loc;
-            location = Arconix.pl().getApi().serialize().unserializeLocation(loc);
-            block = location.getBlock();
-        } catch (Exception e) {
-            Debugger.runReport(e);
-        }
+    public Furnace(Block block, Level level, String nickname, int uses, int tolevel, List<String> accessList) {
+        this(block.getLocation(), level, nickname, uses, tolevel, accessList);
     }
 
 
-    @SuppressWarnings("unchecked")
-    public void open(Player p) {
+    public void openOverview(Player p) {
         try {
-            plugin.blockLoc.put(p.getName(), location.getBlock());
+            EpicFurnaces instance = EpicFurnaces.getInstance();
+            if (!p.hasPermission("epicdispensers.overview")) return;
+            instance.blockLoc.put(p.getName(), location.getBlock());
 
-            int xpCost = 1;
-            int ecoCost = 1;
+            Level nextLevel = instance.getLevelManager().getHighestLevel().getLevel() > level.getLevel() ? instance.getLevelManager().getLevel(level.getLevel() + 1) : null;
 
-            String nickname = "Unset";
+            int multi = instance.getConfig().getInt("settings.Turbo-level-multiplier");
 
-            if (plugin.dataFile.getConfig().contains("data.charged." + locationStr + ".nickname")) {
-                nickname = plugin.dataFile.getConfig().getString("data.charged." + locationStr + ".nickname");
-            }
-
-            int uses = plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".uses");
-            int tolevel = plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".tolevel");
-            int level = plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".level");
-
-            if (level == 0)
-                level = 1;
-
-            String performance = "0%";
-            if (plugin.getConfig().contains("settings.levels.Level-" + level + ".Performance")) {
-                performance = plugin.getConfig().getString("settings.levels.Level-" + level + ".Performance");
-            }
-            String reward = "0%";
-            if (plugin.getConfig().contains("settings.levels.Level-" + level + ".Reward")) {
-                reward = plugin.getConfig().getString("settings.levels.Level-" + level + ".Reward");
-            }
-            String fuelDuration = "0%";
-            if (plugin.getConfig().contains("settings.levels.Level-" + level + ".Fuel-duration")) {
-                fuelDuration = plugin.getConfig().getString("settings.levels.Level-" + level + ".Fuel-duration");
-            }
-
-            boolean showPerformance = false;
-            boolean showReward = false;
-            boolean showFuelDuration = false;
-
-            for (int l = 1; plugin.getConfig().contains("settings.levels.Level-" + l); l++) {
-                if (plugin.getConfig().contains("settings.levels.Level-" + l + ".Performance")) {
-                    showPerformance = true;
-                }
-                if (plugin.getConfig().contains("settings.levels.Level-" + l + ".Reward")) {
-                    showReward = true;
-                }
-                if (plugin.getConfig().contains("settings.levels.Level-" + l + ".Fuel-duration")) {
-                    showFuelDuration = true;
-                }
-            }
-
-            String nextPerformance = null;
-            String nextReward = null;
-            String nextFuelDuration = null;
-
-            boolean maxed = true;
-
-            if (plugin.getConfig().contains("settings.levels.Level-" + (level + 1))) {
-                xpCost = plugin.getConfig().getInt("settings.levels.Level-" + (level + 1) + ".Cost-xp");
-                ecoCost = plugin.getConfig().getInt("settings.levels.Level-" + (level + 1) + ".Cost-eco");
-                nextPerformance = plugin.getConfig().getString("settings.levels.Level-" + (level + 1) + ".Performance");
-                nextReward = plugin.getConfig().getString("settings.levels.Level-" + (level + 1) + ".Reward");
-                nextFuelDuration = plugin.getConfig().getString("settings.levels.Level-" + (level + 1) + ".Fuel-duration");
-                maxed = false;
-            }
-
-            int multi = plugin.getConfig().getInt("settings.Turbo-level-multiplier");
-
-            if (plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".level") == 0) {
-                level = 1;
-            }
-
-            int needed = (multi * level) - tolevel;
+            int needed = (multi * level.getLevel()) - tolevel;
 
             ItemStack item = new ItemStack(Material.FURNACE, 1);
 
             ItemMeta itemmeta = item.getItemMeta();
-            itemmeta.setDisplayName(Arconix.pl().getApi().format().formatText(Lang.LEVEL.getConfigValue(level)));
+            itemmeta.setDisplayName(instance.getLocale().getMessage("interface.furnace.currentlevel", level.getLevel()));
             ArrayList<String> lore = new ArrayList<>();
-            lore.add(Arconix.pl().getApi().format().formatText(Lang.SMELTED_X.getConfigValue(Integer.toString(uses), null)));
+            lore.add(instance.getLocale().getMessage("interface.furnace.smeltedx", uses));
+            lore.addAll(this.level.getDescription());
             lore.add("");
-            if (maxed) {
-                lore.add(Arconix.pl().getApi().format().formatText(Lang.MAXED.getConfigValue(null, null)));
-            } else {
-                lore.add(Lang.NEXT_LEVEL.getConfigValue(level + 1));
-                lore.add(Arconix.pl().getApi().format().formatText(Lang.PERFORMANCE_AMT.getConfigValue(nextPerformance, null)));
-                lore.add(Arconix.pl().getApi().format().formatText(Lang.REWARD_AMT.getConfigValue(nextReward, null)));
-                if (nextFuelDuration != null) {
-                    lore.add(Arconix.pl().getApi().format().formatText(Lang.FuelDuration_AMT.getConfigValue(nextFuelDuration, null)));
-                }
-                if (plugin.getConfig().getBoolean("settings.Upgrade-with-material")) {
-                    lore.add(Arconix.pl().getApi().format().formatText(Lang.TO_LEVELUP.getConfigValue(Integer.toString(needed), Methods.cleanString(plugin.getConfig().getString("settings.Furnace-upgrade-cost")))));
+            if (nextLevel == null)
+                lore.add(instance.getLocale().getMessage("interface.furnace.alreadymaxed"));
+            else {
+                lore.add(instance.getLocale().getMessage("interface.furnace.level", nextLevel.getLevel()));
+                lore.addAll(nextLevel.getDescription());
+
+                if (instance.getConfig().getBoolean("settings.Upgrade-with-material")) {
+                    lore.add(instance.getLocale().getMessage("interface.furnace.tolevel", needed, Methods.cleanString(instance.getConfig().getString("settings.furnace-upgrade-cost"))));
                 }
             }
+
             itemmeta.setLore(lore);
             item.setItemMeta(itemmeta);
 
-            Inventory i = Bukkit.createInventory(null, 27, Arconix.pl().getApi().format().formatText(Methods.formatName(level, 0, false)));
+            Inventory i = Bukkit.createInventory(null, 27, Arconix.pl().getApi().format().formatText(Methods.formatName(level.getLevel(), 0, false)));
 
             int nu = 0;
             while (nu != 27) {
@@ -160,12 +97,12 @@ public class Furnace {
             }
 
 
-            ItemStack item2 = new ItemStack(Material.valueOf(plugin.getConfig().getString("settings.Performance-Icon")), 1);
+            ItemStack item2 = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.Performance-Icon")), 1);
             ItemMeta itemmeta2 = item2.getItemMeta();
-            itemmeta2.setDisplayName(Arconix.pl().getApi().format().formatText(Lang.PERFORMANCE_TITLE.getConfigValue(null, null))); //greyed out until available
+            itemmeta2.setDisplayName(instance.getLocale().getMessage("interface.furnace.performancetitle")); //greyed out until available
             ArrayList<String> lore2 = new ArrayList<>();
 
-            String[] parts = Lang.PERFORMANCE_INFO.getConfigValue(performance, null).split("\\|");
+            String[] parts = instance.getLocale().getMessage("interface.furnace.performanceinfo", level.getPerformance()).split("\\|");
             lore.add("");
             for (String line : parts) {
                 lore2.add(Arconix.pl().getApi().format().formatText(line));
@@ -173,12 +110,12 @@ public class Furnace {
             itemmeta2.setLore(lore2);
             item2.setItemMeta(itemmeta2);
 
-            ItemStack item3 = new ItemStack(Material.valueOf(plugin.getConfig().getString("settings.Reward-Icon")), 1);
+            ItemStack item3 = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.Reward-Icon")), 1);
             ItemMeta itemmeta3 = item3.getItemMeta();
-            itemmeta3.setDisplayName(Arconix.pl().getApi().format().formatText(Lang.REWARD_TITLE.getConfigValue(null, null))); //greyed out until available
+            itemmeta3.setDisplayName(instance.getLocale().getMessage("interface.furnace.rewardtitle"));
             ArrayList<String> lore3 = new ArrayList<>();
 
-            parts = Lang.REWARD_INFO.getConfigValue(reward, null).split("\\|");
+            parts = instance.getLocale().getMessage("interface.furnace.rewardinfo", level.getPerformance()).split("\\|");
             lore.add("");
             for (String line : parts) {
                 lore3.add(Arconix.pl().getApi().format().formatText(line));
@@ -187,11 +124,12 @@ public class Furnace {
             item3.setItemMeta(itemmeta3);
 
 
-            ItemStack item4 = new ItemStack(Material.valueOf(plugin.getConfig().getString("settings.FuelDuration-Icon")), 1);
+            ItemStack item4 = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.FuelDuration-Icon")), 1);
             ItemMeta itemmeta4 = item4.getItemMeta();
-            itemmeta4.setDisplayName(Arconix.pl().getApi().format().formatText(Lang.FUELDURATION_TITLE.getConfigValue(null, null))); //greyed out until available
+            itemmeta4.setDisplayName(instance.getLocale().getMessage("interface.furnace.fueldurationtitle"));
             ArrayList<String> lore4 = new ArrayList<>();
-            parts = Lang.FUELDURATION_INFO.getConfigValue(fuelDuration, null).split("\\|");
+
+            parts = instance.getLocale().getMessage("interface.furnace.fueldurationinfo", level.getFuelDuration()).split("\\|");
             lore.add("");
             for (String line : parts) {
                 lore4.add(Arconix.pl().getApi().format().formatText(line));
@@ -199,39 +137,37 @@ public class Furnace {
             itemmeta4.setLore(lore4);
             item4.setItemMeta(itemmeta4);
 
-            ItemStack itemXP = new ItemStack(Material.valueOf(plugin.getConfig().getString("settings.XP-Icon")), 1);
+            ItemStack itemXP = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.XP-Icon")), 1);
             ItemMeta itemmetaXP = itemXP.getItemMeta();
-            itemmetaXP.setDisplayName(Lang.XPTITLE.getConfigValue(null));
+            itemmetaXP.setDisplayName(instance.getLocale().getMessage("interface.furnace.upgradewithxp"));
             ArrayList<String> loreXP = new ArrayList<>();
-            if (!maxed) {
-                loreXP.add(Lang.XPLORE.getConfigValue(xpCost + ""));
-            } else {
-                loreXP.add(Lang.MAXED.getConfigValue(null));
-            }
+            if (nextLevel != null)
+                loreXP.add(instance.getLocale().getMessage("interface.furnace.upgradewithxplore", level.getCostExperiance()));
+            else
+                loreXP.add(instance.getLocale().getMessage("interface.furnace.alreadymaxed"));
             itemmetaXP.setLore(loreXP);
             itemXP.setItemMeta(itemmetaXP);
 
-            ItemStack itemECO = new ItemStack(Material.valueOf(plugin.getConfig().getString("settings.ECO-Icon")), 1);
+            ItemStack itemECO = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.ECO-Icon")), 1);
             ItemMeta itemmetaECO = itemECO.getItemMeta();
-            itemmetaECO.setDisplayName(Lang.ECOTITLE.getConfigValue(null));
+            itemmetaECO.setDisplayName(instance.getLocale().getMessage("interface.furnace.upgradewitheconomy"));
             ArrayList<String> loreECO = new ArrayList<>();
-            if (!maxed) {
-                loreECO.add(Lang.ECOLORE.getConfigValue(Arconix.pl().getApi().format().formatEconomy(ecoCost)));
-            } else {
-                loreECO.add(Lang.MAXED.getConfigValue(null));
-            }
+            if (nextLevel != null)
+                loreECO.add(instance.getLocale().getMessage("interface.furnace.upgradewitheconomylore", Arconix.pl().getApi().format().formatEconomy(level.getCostEconomy())));
+            else
+                loreECO.add(instance.getLocale().getMessage("interface.furnace.alreadymaxed"));
             itemmetaECO.setLore(loreECO);
             itemECO.setItemMeta(itemmetaECO);
 
             i.setItem(13, item);
 
-            if (showPerformance) {
+            if (level.getPerformance() != 0) {
                 i.setItem(21, item2);
             }
-            if (showReward) {
+            if (level.getReward() != null) {
                 i.setItem(22, item3);
             }
-            if (showFuelDuration) {
+            if (level.getFuelDuration() != 0) {
                 i.setItem(23, item4);
             }
 
@@ -254,204 +190,230 @@ public class Furnace {
 
             ItemStack hook = new ItemStack(Material.TRIPWIRE_HOOK, 1);
             ItemMeta hookmeta = hook.getItemMeta();
-            hookmeta.setDisplayName(Arconix.pl().getApi().format().formatText(Lang.REMOTE_FURNACE.getConfigValue(null)));
+            hookmeta.setDisplayName(instance.getLocale().getMessage("interface.furnace.remotefurnace"));
             ArrayList<String> lorehook = new ArrayList<>();
-            parts = Lang.REMOTE_FURNACE_LORE.getConfigValue(nickname).split("\\|");
+
+            parts = instance.getLocale().getMessage("interface.furnace.remotefurnacelore", nickname == null ? "Unset" : nickname).split("\\|");
+
             for (String line : parts) {
                 lorehook.add(Arconix.pl().getApi().format().formatText(line));
             }
-            if (!nickname.equals("Unset")) {
-                parts = Lang.REMOTE_UTIL.getConfigValue(nickname).split("\\|");
+            if (nickname != null) {
+                parts = instance.getLocale().getMessage("interface.furnace.utilize", nickname).split("\\|");
                 for (String line : parts) {
                     lorehook.add(Arconix.pl().getApi().format().formatText(line));
                 }
             }
 
-            if (plugin.dataFile.getConfig().contains("data.charged." + locationStr + ".remoteAccessList")) {
-                for (String line : (List<String>) plugin.dataFile.getConfig().getList("data.charged." + locationStr + ".remoteAccessList")) {
-                    lorehook.add("");
-                    lorehook.add(Arconix.pl().getApi().format().formatText(Lang.REMOTE_LIST.getConfigValue()));
-                    String[] halfs = line.split(":");
-                    String name = halfs[1];
-                    Player player = Bukkit.getPlayer(halfs[0]);
-                    if (player != null) {
-                        name = player.getDisplayName();
-                    }
-                    lorehook.add(Arconix.pl().getApi().format().formatText("&6" + name));
+            for (String line : accessList) {
+                lorehook.add("");
+                lorehook.add(instance.getLocale().getMessage("interface.furnace.remotelist"));
+                String[] halfs = line.split(":");
+                String name = halfs[1];
+                Player player = Bukkit.getPlayer(halfs[0]);
+                if (player != null) {
+                    name = player.getDisplayName();
                 }
+                lorehook.add(Arconix.pl().getApi().format().formatText("&6" + name));
             }
             hookmeta.setLore(lorehook);
             hook.setItemMeta(hookmeta);
 
-            if (plugin.getConfig().getBoolean("settings.Remote-Furnaces") && p.hasPermission("EpicFurnaces.Remote")) {
+            if (instance.getConfig().getBoolean("settings.Remote-Furnaces") && p.hasPermission("EpicFurnaces.Remote")) {
                 i.setItem(4, hook);
             }
 
             i.setItem(13, item);
 
-            if (plugin.getConfig().getBoolean("settings.Upgrade-with-xp") && p.hasPermission("EpicFurnaces.Upgrade.XP")) {
+            if (instance.getConfig().getBoolean("settings.Upgrade-with-xp") && p.hasPermission("EpicFurnaces.Upgrade.XP")) {
                 i.setItem(11, itemXP);
             }
-            if (plugin.getConfig().getBoolean("settings.Upgrade-with-eco") && p.hasPermission("EpicFurnaces.Upgrade.ECO")) {
+            if (instance.getConfig().getBoolean("settings.Upgrade-with-eco") && p.hasPermission("EpicFurnaces.Upgrade.ECO")) {
                 i.setItem(15, itemECO);
             }
 
             p.openInventory(i);
-            plugin.inShow.put(p, locationStr);
+            instance.inShow.put(p, this);
         } catch (Exception e) {
             Debugger.runReport(e);
         }
     }
 
-    public void plus(Material mat, int amt) {
+    public void plus(FurnaceSmeltEvent e) {
         try {
-            if (block.getType() == Material.FURNACE || block.getType() == Material.BURNING_FURNACE) {
-                if (plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".uses") == 0) {
-                    plugin.dataFile.getConfig().set("data.charged." + locationStr + ".uses", 1);
-                } else {
-                    int uses = plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".uses");
-                    plugin.dataFile.getConfig().set("data.charged." + locationStr + ".uses", uses + 1);
-                }
+            Block block = location.getBlock();
+            if (block.getType() == Material.FURNACE && block.getType() == Material.BURNING_FURNACE) {
+                return;
+            }
 
-                int tolevel = 1;
-                if (mat == Material.valueOf(plugin.getConfig().getString("settings.Furnace-upgrade-cost"))) {
-                    if (plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".tolevel") == 0) {
-                        plugin.dataFile.getConfig().set("data.charged." + locationStr + ".tolevel", 1);
-                    } else {
-                        tolevel = plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".tolevel");
-                        plugin.dataFile.getConfig().set("data.charged." + locationStr + ".tolevel", tolevel + 1);
-                    }
-                }
+            uses++;
+            tolevel++;
 
-                int multi = plugin.getConfig().getInt("settings.Turbo-level-multiplier");
+            int multi = instance.getConfig().getInt("settings.Turbo-level-multiplier");
 
-                int level = plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".level");
+            if (level.getReward() == null) return;
 
-                if (level == 0)
-                    level = 1;
-                if (plugin.getConfig().contains("settings.levels.Level-" + level + ".Reward")) {
-                    String reward = plugin.getConfig().getString("settings.levels.Level-" + level + ".Reward");
-                    reward = reward.substring(0, reward.length() - 1);
-
-                    int needed = ((multi * level) - tolevel) - 1;
-
-                    if (plugin.getConfig().getBoolean("settings.Upgrade-with-material")) {
-                        if (needed <= 0 && plugin.getConfig().contains("settings.levels.Level-" + (level + 1))) {
-                            plugin.dataFile.getConfig().set("data.charged." + locationStr + ".tolevel", 0);
-                            plugin.dataFile.getConfig().set("data.charged." + locationStr + ".level", level + 1);
-                        }
-                    }
-                    updateCook();
-
-                    if (plugin.dataFile.getConfig().contains("data.charged." + locationStr)) {
-                        FurnaceInventory i = (FurnaceInventory) ((InventoryHolder) block.getState()).getInventory();
-
-                        try {
-                            int num = Integer.parseInt(reward);
-                            double rand = Math.random() * 100;
-                            if (rand <= num) {
-                                if (plugin.getConfig().getBoolean("settings.Ignore-custom-recipes-for-rewards") && plugin.furnaceRecipeFile.getConfig().contains("Recipes." + i.getSmelting().getType().toString())) {
-                                } else {
-                                    if (!mat.equals(Material.SPONGE))
-                                        i.getResult().setAmount(i.getResult().getAmount() + 1);
-                                }
-                            }
-                        } catch (Exception ignore) {
-                        }
-                    }
+            String reward = level.getReward();
+            String amt[] = {"1", "1"};
+            if (reward.contains(":")) {
+                String[] rewardSplit = reward.split(":");
+                reward = rewardSplit[0].substring(0, rewardSplit[0].length() - 1);
+                if (rewardSplit[1].contains("-"))
+                    amt = rewardSplit[1].split("-");
+                else {
+                    amt[0] = rewardSplit[1];
+                    amt[1] = rewardSplit[0];
                 }
             }
-        } catch (Exception e) {
-            Debugger.runReport(e);
+
+            int needed = ((multi * level.getLevel()) - tolevel) - 1;
+
+            if (instance.getConfig().getBoolean("settings.Upgrade-with-material")
+                    && needed <= 0
+                    && instance.getConfig().contains("settings.levels.Level-" + (level.getLevel() + 1))) {
+                tolevel = 0;
+                level = instance.getLevelManager().getLevel(this.level.getLevel() + 1);
+
+            }
+            updateCook();
+
+            FurnaceInventory i = (FurnaceInventory) ((InventoryHolder) block.getState()).getInventory();
+
+            int num = Integer.parseInt(reward);
+            double rand = Math.random() * 100;
+            if (rand >= num
+                    || e.getResult().equals(Material.SPONGE)
+                    || instance.getConfig().getBoolean("settings.Ignore-custom-recipes-for-rewards")
+                    && instance.furnaceRecipeFile.getConfig().contains("Recipes." + i.getSmelting().getType().toString())) {
+                return;
+            }
+
+            int r = Integer.parseInt(amt[0]);
+            if (Integer.parseInt(amt[0]) != Integer.parseInt(amt[1]))
+                r = (int) (Math.random() * ((Integer.parseInt(amt[1]) - Integer.parseInt(amt[0])) + 1)) + Integer.parseInt(amt[0]);
+
+
+            if (e.getResult() != null) {
+                e.getResult().setAmount(e.getResult().getAmount() + r);
+                return;
+            }
+
+            e.setResult(new ItemStack(e.getResult().getType(), r));
+        } catch (Exception ex) {
+            Debugger.runReport(ex);
         }
     }
 
 
-    public void upgrade(String type, Player p) {
+    public void upgrade(String type, Player player) {
         try {
-            int level = plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".level");
-            if (level == 0) {
-                level = 1;
-            }
-            if (plugin.getConfig().contains("settings.levels.Level-" + (level + 1))) {
+            EpicFurnaces instance = EpicFurnaces.getInstance();
+            if (instance.getLevelManager().getLevels().containsKey(this.level.getLevel() + 1)) {
 
+                Level level = instance.getLevelManager().getLevel(this.level.getLevel() + 1);
                 int cost;
                 if (type.equals("XP")) {
-                    cost = plugin.getConfig().getInt("settings.levels.Level-" + (level + 1) + ".Cost-xp");
+                    cost = level.getCostExperiance();
                 } else {
-                    cost = plugin.getConfig().getInt("settings.levels.Level-" + (level + 1) + ".Cost-eco");
+                    cost = level.getCostEconomy();
                 }
 
                 if (type.equals("ECO")) {
-                    if (plugin.getServer().getPluginManager().getPlugin("Vault") != null) {
-                        RegisteredServiceProvider<Economy> rsp = plugin.getServer().getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
+                    if (instance.getServer().getPluginManager().getPlugin("Vault") != null) {
+                        RegisteredServiceProvider<Economy> rsp = instance.getServer().getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
                         net.milkbowl.vault.economy.Economy econ = rsp.getProvider();
-                        if (econ.has(p, cost)) {
-                            econ.withdrawPlayer(p, cost);
-                            upgradeFinal(level + 1, p);
+                        if (econ.has(player, cost)) {
+                            econ.withdrawPlayer(player, cost);
+                            upgradeFinal(level, player);
                         } else {
-                            p.sendMessage(plugin.references.getPrefix() + Lang.CANT_AFFORD.getConfigValue(null));
+                            player.sendMessage(instance.getLocale().getMessage("event.upgrade.cannotafford"));
                         }
                     } else {
-                        p.sendMessage("Vault is not installed.");
+                        player.sendMessage("Vault is not installed.");
                     }
                 } else if (type.equals("XP")) {
-                    if (p.getLevel() >= cost || p.getGameMode() == GameMode.CREATIVE) {
-                        if (p.getGameMode() != GameMode.CREATIVE) {
-                            p.setLevel(p.getLevel() - cost);
+                    if (player.getLevel() >= cost || player.getGameMode() == GameMode.CREATIVE) {
+                        if (player.getGameMode() != GameMode.CREATIVE) {
+                            player.setLevel(player.getLevel() - cost);
                         }
-                        upgradeFinal(level + 1, p);
+                        upgradeFinal(level, player);
                     } else {
-                        p.sendMessage(plugin.references.getPrefix() + Lang.CANT_AFFORD.getConfigValue(null));
+                        player.sendMessage(instance.getLocale().getMessage("event.upgrade.cannotafford"));
                     }
                 }
             }
-        } catch (Exception e) {
-            Debugger.runReport(e);
+        } catch (Exception ex) {
+            Debugger.runReport(ex);
         }
     }
 
-    public void upgradeFinal(int level, Player p) {
+    public boolean isMaxed(int level) {
+        return EpicFurnaces.getInstance().getConfig().contains("settings.levels.Level-" + (level + 1));
+    }
+
+
+    public void upgradeFinal(Level level, Player player) {
         try {
-            plugin.dataFile.getConfig().set("data.charged." + locationStr + ".level", level);
-            p.sendMessage(plugin.references.getPrefix() + Lang.UPGRADE_MESSAGE.getConfigValue(level));
-            if (plugin.getConfig().getBoolean("settings.On-upgrade-particles")) {
-                Location loc = location;
-                loc.setX(loc.getX() + .5);
-                loc.setY(loc.getY() + .5);
-                loc.setZ(loc.getZ() + .5);
-                if (!plugin.v1_8 && !plugin.v1_7) {
-                    p.getWorld().spawnParticle(org.bukkit.Particle.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), loc, 200, .5, .5, .5);
+            EpicFurnaces instance = EpicFurnaces.getInstance();
+            this.level = level;
+            if (instance.getLevelManager().getHighestLevel() != level) {
+                player.sendMessage(instance.getLocale().getMessage("event.upgrade.success", level.getLevel()));
+            } else {
+                player.sendMessage(instance.getLocale().getMessage("event.upgrade.maxed", level.getLevel()));
+            }
+            Location loc = location.clone().add(.5, .5, .5);
+            if (!instance.v1_8 && !instance.v1_7) {
+                player.getWorld().spawnParticle(org.bukkit.Particle.valueOf(instance.getConfig().getString("settings.Upgrade-particle-type")), loc, 200, .5, .5, .5);
+            } else {
+                //Doesn't resolve --Nova
+                player.getWorld().playEffect(loc, org.bukkit.Effect.valueOf(instance.getConfig().getString("settings.Upgrade-particle-type")), 1, 0);
+                //player.getWorld().spigot().playEffect(loc, org.bukkit.Effect.valueOf(instance.getConfig().getString("settings.Upgrade-particle-type")), 1, 0, (float) 1, (float) 1, (float) 1, 1, 200, 10);
+            }
+            if (instance.getConfig().getBoolean("settings.sounds")) {
+                if (instance.getLevelManager().getHighestLevel() == level) {
+                    if (!instance.v1_8 && !instance.v1_7) {
+                        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.6F, 15.0F);
+                    } else {
+                        player.playSound(player.getLocation(), org.bukkit.Sound.valueOf("LEVEL_UP"), 2F, 15.0F);
+                    }
                 } else {
-                    p.getWorld().playEffect(loc, org.bukkit.Effect.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), 1, 0);
-                    //Not resolving --Nova
-                    //p.getWorld().spigot().playEffect(loc, org.bukkit.Effect.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), 1, 0, (float) 1, (float) 1, (float) 1, 1, 200, 10);
+                    if (!instance.v1_10 && !instance.v1_9 && !instance.v1_8 && !instance.v1_7) {
+                        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 2F, 25.0F);
+                        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_CHIME, 2F, 25.0F);
+                        Bukkit.getScheduler().scheduleSyncDelayedTask(instance, () -> player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_CHIME, 1.2F, 35.0F), 5L);
+                        Bukkit.getScheduler().scheduleSyncDelayedTask(instance, () -> player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_CHIME, 1.8F, 35.0F), 10L);
+                    } else {
+                        player.playSound(player.getLocation(), org.bukkit.Sound.valueOf("LEVEL_UP"), 2F, 25.0F);
+                    }
                 }
             }
-        } catch (Exception e) {
-            Debugger.runReport(e);
+        } catch (Exception ex) {
+            Debugger.runReport(ex);
         }
     }
+
+    private Map<String, Integer> cache = new HashMap<>();
 
     public void updateCook() {
         try {
+            Block block = location.getBlock();
             if (block != null && block.getType() != Material.AIR) {
                 if (block.getType() == Material.FURNACE || block.getType() == Material.BURNING_FURNACE) {
-                    Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                    Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(instance, () -> {
 
-                        int level = plugin.dataFile.getConfig().getInt("data.charged." + locationStr + ".level");
 
-                        if (level == 0)
-                            level = 1;
+                        int performance = level.getPerformance();
 
-                        String performance = plugin.getConfig().getString("settings.levels.Level-" + level + ".Performance");
-                        performance = performance.substring(0, performance.length() - 1);
-
-                        int num = Integer.parseInt(performance) * 2;
+                        int num = performance * 2;
                         try {
-                            ScriptEngineManager mgr = new ScriptEngineManager();
-                            ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                            num = (int) Math.round(Double.parseDouble(engine.eval("(" + performance + " / 100) * 200").toString()));
+                            String equation = "(" + performance + " / 100) * 200";
+                            if (!cache.containsKey(equation)) {
+                                num = cache.get(equation);
+                                ScriptEngineManager mgr = new ScriptEngineManager();
+                                ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                                num = (int) Math.round(Double.parseDouble(engine.eval("(" + performance + " / 100) * 200").toString()));
+                                cache.put(equation, num);
+                            }
 
                         } catch (Exception ignore) {
                         }
@@ -470,5 +432,45 @@ public class Furnace {
         } catch (Exception e) {
             Debugger.runReport(e);
         }
+    }
+
+    public Level getLevel() {
+        return level;
+    }
+
+    public List<String> getAccessList() {
+        return Collections.unmodifiableList(accessList);
+    }
+
+    public boolean addToAccessList(String string) {
+        return accessList.add(string);
+    }
+
+    public boolean removeFromAccessList(String string) {
+        return accessList.remove(string);
+    }
+
+    public void clearAccessList() {
+        accessList.clear();
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public int getUses() {
+        return uses;
+    }
+
+    public int getTolevel() {
+        return tolevel;
     }
 }

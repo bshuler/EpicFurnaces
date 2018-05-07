@@ -24,20 +24,20 @@ public class HookHandler {
 
     public void hook() {
         try {
-            hooksFile.createNewFile("Loading Hooks File", EpicFurnaces.getInstance().getDescription().getName() + " Hooks File");
+            hooksFile.createNewFile("Loading hooks File", EpicFurnaces.getInstance().getDescription().getName() + " hooks File");
 
-        new FactionsHook();
-        new RedProtectHook();
-        new GriefPreventionHook();
-        new ASkyBlockHook();
-        new USkyBlockHook();
-        new WorldGuardHook();
-        new PlotSquaredHook();
-        new KingdomsHook();
-        new TownyHook();
+            new FactionsHook();
+            new RedProtectHook();
+            new GriefPreventionHook();
+            new ASkyBlockHook();
+            new USkyBlockHook();
+            new WorldGuardHook();
+            new PlotSquaredHook();
+            new KingdomsHook();
+            new TownyHook();
 
-        hooksFile.getConfig().options().copyDefaults(true);
-        hooksFile.saveConfig();
+            hooksFile.getConfig().options().copyDefaults(true);
+            hooksFile.saveConfig();
         } catch (Exception e) {
             Debugger.runReport(e);
         }
@@ -84,7 +84,7 @@ public class HookHandler {
     public String getIslandId(String name) {
         try {
             return Bukkit.getOfflinePlayer(name).getUniqueId().toString();
-        } catch (Exception e) {
+        } catch (Exception ignore) {
         }
         return null;
     }

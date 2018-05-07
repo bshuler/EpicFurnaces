@@ -21,7 +21,7 @@ public class ASkyBlockHook extends Hook {
         super("ASkyblock");
         if (isEnabled()) {
             as = ASkyBlockAPI.getInstance();
-            EpicFurnaces plugin = EpicFurnaces.pl();
+            EpicFurnaces plugin = EpicFurnaces.getInstance();
             plugin.hooks.ASkyBlockHook = this;
         }
     }

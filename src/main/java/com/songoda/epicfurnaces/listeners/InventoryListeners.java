@@ -2,7 +2,6 @@ package com.songoda.epicfurnaces.listeners;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Lang;
 import com.songoda.epicfurnaces.furnace.Furnace;
 import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.Material;
@@ -10,10 +9,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryAction;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -24,26 +20,42 @@ import java.util.List;
  */
 public class InventoryListeners implements Listener {
 
-    private EpicFurnaces plugin = EpicFurnaces.pl();
+    private final EpicFurnaces instance;
+
+    public InventoryListeners(EpicFurnaces instance) {
+        this.instance = instance;
+    }
+
+    @EventHandler
+    public void onInventoryMove(InventoryMoveItemEvent e) {
+        if (!e.getDestination().getType().equals(InventoryType.FURNACE)
+                || instance.v1_7
+                || instance.v1_8
+                || e.getDestination().getItem(0) == null
+                || e.getDestination().getItem(0).getAmount() != 1) {
+            return;
+        }
+        instance.getFurnaceManager().getFurnace(e.getDestination().getLocation()).updateCook();
+    }
 
     @SuppressWarnings("unchecked")
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         try {
             Player p = (Player) e.getWhoClicked();
-            if (e.getInventory().getType().equals(InventoryType.FURNACE)) {
-                if (e.getInventory().getHolder() != null) {
-                    if (e.getSlotType() == InventoryType.SlotType.CRAFTING) {
-                        if (plugin.blockLoc.containsKey(p.getName())) {
-                            Block b = plugin.blockLoc.get(p.getName());
-                            Furnace furnace = new Furnace(Arconix.pl().getApi().serialize().serializeLocation(b));
-                            furnace.updateCook();
-                        }
-                    }
-                }
-            } else if (plugin.inShow.containsKey(p)) {
+            if (e.getInventory().getType().equals(InventoryType.FURNACE)
+                    && e.getInventory().getHolder() != null
+                    && e.getSlotType() == InventoryType.SlotType.CRAFTING) {
+                Block block;
+                if (!instance.v1_7 && !instance.v1_8) {
+                    block = e.getInventory().getLocation().getBlock();
+                } else if (instance.blockLoc.containsKey(p.getName())) {
+                    block = instance.blockLoc.get(p.getName());
+                } else return;
+                instance.getFurnaceManager().getFurnace(block).updateCook();
+            } else if (instance.inShow.containsKey(p)) {
                 e.setCancelled(true);
-                Furnace furnace = new Furnace(plugin.inShow.get(p));
+                Furnace furnace = instance.inShow.get(p);
                 if (e.getSlot() == 11) {
                     if (!e.getCurrentItem().getItemMeta().getDisplayName().equals("§l")) {
                         furnace.upgrade("XP", p);
@@ -57,16 +69,16 @@ public class InventoryListeners implements Listener {
                 } else if (e.getSlot() == 4) {
                     if (!e.getCurrentItem().getItemMeta().getDisplayName().equals("§l")) {
                         if (e.getClick().isLeftClick()) {
-                            p.sendMessage(plugin.references.getPrefix() + Lang.ENTER.getConfigValue());
-                            plugin.nicknameQ.put(p, furnace.location);
+                            p.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.remote.enter"));
+                            instance.nicknameQ.put(p, furnace.getLocation());
                             p.closeInventory();
                         } else if (e.getClick().isRightClick()) {
                             List<String> list = new ArrayList<>();
-                            String key = Arconix.pl().getApi().serialize().serializeLocation(furnace.location);
+                            String key = Arconix.pl().getApi().serialize().serializeLocation(furnace.getLocation());
                             String id = p.getUniqueId().toString() + ":" + p.getName();
-                            if (plugin.dataFile.getConfig().contains("data.charged." + key + ".remoteAccessList")) {
-                                list = (List<String>) plugin.dataFile.getConfig().getList("data.charged." + key + ".remoteAccessList");
-                                for (String line : (List<String>) plugin.dataFile.getConfig().getList("data.charged." + key + ".remoteAccessList")) {
+                            if (instance.dataFile.getConfig().contains("data.charged." + key + ".remoteAccessList")) {
+                                list = (List<String>) instance.dataFile.getConfig().getList("data.charged." + key + ".remoteAccessList");
+                                for (String line : (List<String>) instance.dataFile.getConfig().getList("data.charged." + key + ".remoteAccessList")) {
                                     if (id.equals(line)) {
                                         e.setCancelled(true);
                                         return;
@@ -74,8 +86,8 @@ public class InventoryListeners implements Listener {
                                 }
                             }
                             list.add(id);
-                            plugin.dataFile.getConfig().set("data.charged." + key + ".remoteAccessList", list);
-                            furnace.open(p);
+                            instance.dataFile.getConfig().set("data.charged." + key + ".remoteAccessList", list);
+                            furnace.openOverview(p);
                         }
                     }
                 }
@@ -102,7 +114,7 @@ public class InventoryListeners implements Listener {
     public void onClose(InventoryCloseEvent event) {
         try {
             final Player player = (Player) event.getPlayer();
-            plugin.inShow.remove(player);
+            instance.inShow.remove(player);
         } catch (Exception e) {
             Debugger.runReport(e);
         }

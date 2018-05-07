@@ -16,7 +16,7 @@ public class KingdomsHook extends Hook {
 
     public KingdomsHook() {
         super("Kingdoms");
-        EpicFurnaces plugin = EpicFurnaces.pl();
+        EpicFurnaces plugin = EpicFurnaces.getInstance();
         if (isEnabled())
             plugin.hooks.KingdomsHook = this;
     }

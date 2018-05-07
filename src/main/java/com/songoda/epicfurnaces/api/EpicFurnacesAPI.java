@@ -40,6 +40,4 @@ public class EpicFurnacesAPI {
         }
         return 9999;
     }
-
-
 }

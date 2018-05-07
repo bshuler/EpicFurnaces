@@ -14,7 +14,7 @@ public class RedProtectHook extends Hook {
 
     public RedProtectHook() {
         super("RedProtect");
-        EpicFurnaces plugin = EpicFurnaces.pl();
+        EpicFurnaces plugin = EpicFurnaces.getInstance();
         if (isEnabled())
             plugin.hooks.RedProtectHook = this;
     }

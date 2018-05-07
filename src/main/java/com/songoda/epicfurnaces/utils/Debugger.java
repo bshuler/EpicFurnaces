@@ -24,7 +24,7 @@ public class Debugger {
     }
 
     public static boolean isDebug() {
-        EpicFurnaces plugin = EpicFurnaces.pl();
+        EpicFurnaces plugin = EpicFurnaces.getInstance();
         return plugin.getConfig().getBoolean("settings.Debug-Mode");
     }
 

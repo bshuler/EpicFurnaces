@@ -16,7 +16,7 @@ public class PlotSquaredHook extends Hook {
     public PlotSquaredHook() {
         super("PlotSquared");
         if (isEnabled()) {
-            EpicFurnaces plugin = EpicFurnaces.pl();
+            EpicFurnaces plugin = EpicFurnaces.getInstance();
             plugin.hooks.PlotSquaredHook = this;
             this.plotAPI = new PlotAPI();
         }

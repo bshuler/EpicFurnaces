@@ -16,10 +16,11 @@ public abstract class Hook {
     }
 
     protected boolean isEnabled() {
-        return (Bukkit.getPluginManager().isPluginEnabled(pluginName) && EpicFurnaces.getInstance().hooks.hooksFile.getConfig().getBoolean("hooks." + pluginName, true));
+        return (Bukkit.getPluginManager().isPluginEnabled(pluginName)
+                && EpicFurnaces.getInstance().hooks.hooksFile.getConfig().getBoolean("hooks." + pluginName, true));
     }
 
-    protected boolean hasBypass(Player p) {
+    boolean hasBypass(Player p) {
         return p.hasPermission(EpicFurnaces.getInstance().getDescription().getName() + ".bypass");
     }
 

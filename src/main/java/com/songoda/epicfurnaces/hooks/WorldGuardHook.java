@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
  */
 public class WorldGuardHook extends Hook {
 
-    private EpicFurnaces plugin = EpicFurnaces.pl();
+    private EpicFurnaces plugin = EpicFurnaces.getInstance();
 
     public WorldGuardHook() {
         super("WorldGuard");

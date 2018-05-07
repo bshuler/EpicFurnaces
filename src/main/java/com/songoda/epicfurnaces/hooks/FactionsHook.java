@@ -17,7 +17,7 @@ public class FactionsHook extends Hook {
 
     public FactionsHook() {
         super("Factions");
-        EpicFurnaces plugin = EpicFurnaces.pl();
+        EpicFurnaces plugin = EpicFurnaces.getInstance();
         if (isEnabled() && Bukkit.getPluginManager().isPluginEnabled("FactionsFramework"))
             plugin.hooks.GriefPreventionHook = this;
     }
@@ -53,4 +53,5 @@ public class FactionsHook extends Hook {
         }
         return null;
     }
+
 }

@@ -17,7 +17,7 @@ public class USkyBlockHook extends Hook {
     public USkyBlockHook() {
         super("USkyBlock");
         if (isEnabled()) {
-            EpicFurnaces plugin = EpicFurnaces.pl();
+            EpicFurnaces plugin = EpicFurnaces.getInstance();
             plugin.hooks.USkyBlockHook = this;
             this.usb = (uSkyBlockAPI) Bukkit.getPluginManager().getPlugin(pluginName);
         }

@@ -15,7 +15,7 @@ public class GriefPreventionHook extends Hook {
 
     public GriefPreventionHook() {
         super("GriefPrevention");
-        EpicFurnaces plugin = EpicFurnaces.pl();
+        EpicFurnaces plugin = EpicFurnaces.getInstance();
         if (isEnabled())
             plugin.hooks.GriefPreventionHook = this;
     }

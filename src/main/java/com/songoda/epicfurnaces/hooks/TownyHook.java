@@ -14,7 +14,7 @@ public class TownyHook extends Hook {
 
     public TownyHook() {
         super("Towny");
-        EpicFurnaces plugin = EpicFurnaces.pl();
+        EpicFurnaces plugin = EpicFurnaces.getInstance();
         if (isEnabled())
             plugin.hooks.TownyHook = this;
     }

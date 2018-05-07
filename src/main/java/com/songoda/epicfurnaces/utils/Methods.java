@@ -2,7 +2,6 @@ package com.songoda.epicfurnaces.utils;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Lang;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -16,7 +15,7 @@ public class Methods {
 
     public static ItemStack getGlass() {
         try {
-            EpicFurnaces plugin = EpicFurnaces.pl();
+            EpicFurnaces plugin = EpicFurnaces.getInstance();
             return Arconix.pl().getApi().getGUI().getGlass(plugin.getConfig().getBoolean("settings.Rainbow-Glass"), plugin.getConfig().getInt("settings.Glass-Type-1"));
         } catch (Exception e) {
             Debugger.runReport(e);
@@ -26,7 +25,7 @@ public class Methods {
 
     public static void particles(Block b, Player p) {
         try {
-            EpicFurnaces plugin = EpicFurnaces.pl();
+            EpicFurnaces plugin = EpicFurnaces.getInstance();
             if (plugin.getConfig().getBoolean("settings.On-upgrade-particles")) {
                 Location location = b.getLocation();
                 location.setX(location.getX() + .5);
@@ -36,7 +35,7 @@ public class Methods {
                     p.getWorld().spawnParticle(org.bukkit.Particle.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), location, 200, .5, .5, .5);
                 } else {
                     p.getWorld().playEffect(location, org.bukkit.Effect.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), 1, 0);
-                    //Still not resolving --Nova
+                    //Doesn't resolve --Nova
                     //p.getWorld().spigot().playEffect(location, org.bukkit.Effect.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), 1, 0, (float) 0.5, (float) 0.5, (float) 0.5, 1, 200, 100);
                 }
             }
@@ -47,7 +46,7 @@ public class Methods {
 
     public static ItemStack getBackgroundGlass(boolean type) {
         try {
-            EpicFurnaces plugin = EpicFurnaces.pl();
+            EpicFurnaces plugin = EpicFurnaces.getInstance();
             if (type)
                 return Arconix.pl().getApi().getGUI().getGlass(false, plugin.getConfig().getInt("settings.Glass-Type-2"));
             else
@@ -71,7 +70,7 @@ public class Methods {
 
     public static String formatName(int level, int uses, boolean full) {
         try {
-            String name = Lang.NAME_FORMAT.getConfigValue(level);
+            String name = EpicFurnaces.getInstance().getLocale().getMessage("general.nametag.nameformat", level);
 
             String info = "";
             if (full) {

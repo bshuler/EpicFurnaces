@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class SettingsManager implements Listener {
 
-    private EpicFurnaces plugin = EpicFurnaces.pl();
+    private EpicFurnaces plugin = EpicFurnaces.getInstance();
 
     private static ConfigWrapper defs;
 
@@ -65,16 +65,12 @@ public class SettingsManager implements Listener {
     public void onChat(AsyncPlayerChatEvent e) {
         final Player p = e.getPlayer();
         if (current.containsKey(p)) {
-            switch (plugin.getConfig().get("settings." + current.get(p)).getClass().getName()) {
-                case "java.lang.Integer":
-                    plugin.getConfig().set("settings." + current.get(p), Integer.parseInt(e.getMessage()));
-                    break;
-                case "java.lang.Double":
-                    plugin.getConfig().set("settings." + current.get(p), Double.parseDouble(e.getMessage()));
-                    break;
-                case "java.lang.String":
-                    plugin.getConfig().set("settings." + current.get(p), e.getMessage());
-                    break;
+            if (plugin.getConfig().get("settings." + current.get(p)).getClass().getName().equals("java.lang.Integer")) {
+                plugin.getConfig().set("settings." + current.get(p), Integer.parseInt(e.getMessage()));
+            } else if (plugin.getConfig().get("settings." + current.get(p)).getClass().getName().equals("java.lang.Double")) {
+                plugin.getConfig().set("settings." + current.get(p), Double.parseDouble(e.getMessage()));
+            } else if (plugin.getConfig().get("settings." + current.get(p)).getClass().getName().equals("java.lang.String")) {
+                plugin.getConfig().set("settings." + current.get(p), e.getMessage());
             }
             finishEditing(p);
             e.setCancelled(true);
@@ -100,7 +96,7 @@ public class SettingsManager implements Listener {
     }
 
     public static void openEditor(Player p) {
-        EpicFurnaces plugin = EpicFurnaces.pl();
+        EpicFurnaces plugin = EpicFurnaces.getInstance();
         Inventory i = Bukkit.createInventory(null, 54, "EpicFurnaces Settings Editor");
 
         int num = 0;
@@ -196,8 +192,11 @@ public class SettingsManager implements Listener {
         o6("Turbo-level-multiplier", 50),
         o7("On-upgrade-particles", true),
 
-        o8("Helpful-Tips", true),
+        o8("sounds", true),
+
+        o83("Helpful-Tips", true),
         o9("Debug-Mode", false),
+        o102("Remember-furnace-Levels", true),
 
 
         o116("Glass-Type-1", 7),
@@ -210,7 +209,7 @@ public class SettingsManager implements Listener {
 
         o324("Redstone-Deactivate", true),
 
-        o11("Furnace-upgrade-cost", "IRON_INGOT"),
+        o11("furnace-upgrade-cost", "IRON_INGOT"),
         o12("Custom-recipes", true),
         o13("Ignore-custom-recipes-for-rewards", true),
 

@@ -5,7 +5,7 @@ public class References {
     private String prefix;
 
     public References() {
-        prefix = Lang.PREFIX.getConfigValue(null, null) + " ";
+        prefix = EpicFurnaces.getInstance().getLocale().getMessage("general.nametag.prefix") + " ";
     }
 
     public String getPrefix() {

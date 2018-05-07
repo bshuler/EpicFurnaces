@@ -2,6 +2,7 @@ package com.songoda.epicfurnaces.listeners;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
+import com.songoda.epicfurnaces.furnace.Furnace;
 import com.songoda.epicfurnaces.utils.Debugger;
 import com.songoda.epicfurnaces.utils.Methods;
 import org.bukkit.Location;
@@ -20,7 +21,11 @@ import org.bukkit.inventory.meta.ItemMeta;
  */
 public class BlockListeners implements Listener {
 
-    private EpicFurnaces plugin = EpicFurnaces.pl();
+    private final EpicFurnaces instance;
+
+    public BlockListeners(EpicFurnaces instance) {
+        this.instance = instance;
+    }
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent e) {
@@ -37,9 +42,9 @@ public class BlockListeners implements Listener {
                     location.getBlock().setType(Material.FURNACE);
                     location.getBlock().setData(b);
 
-                    if (plugin.getApi().getILevel(item) != 1) {
-                        plugin.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(location.getBlock()) + ".level", plugin.getApi().getILevel(item));
-                        plugin.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(location.getBlock()) + ".uses", plugin.getApi().getIUses(item));
+                    if (instance.getApi().getILevel(item) != 1) {
+                        instance.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(location.getBlock()) + ".level", instance.getApi().getILevel(item));
+                        instance.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(location.getBlock()) + ".uses", instance.getApi().getIUses(item));
                     }
                 }
             }
@@ -48,32 +53,34 @@ public class BlockListeners implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
         try {
-            if (!e.isCancelled()) {
-                if (e.getPlayer().hasPermission("epicfurnaces.furnace") || e.getPlayer().hasPermission("epicfurnaces.*")) {
-                    Block b = e.getBlock();
-                    if (b.getType() == Material.FURNACE || b.getType() == Material.BURNING_FURNACE) {
-                        int uses = plugin.dataFile.getConfig().getInt("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(b) + ".uses");
-
-                        int level = plugin.dataFile.getConfig().getInt("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(b) + ".level");
-
-                        if (level != 0) {
-                            e.setCancelled(true);
-                            ItemStack item = new ItemStack(Material.FURNACE, 1);
-                            ItemMeta itemmeta = item.getItemMeta();
-                            itemmeta.setDisplayName(Arconix.pl().getApi().format().formatText(Methods.formatName(level, uses, true)));
-
-                            item.setItemMeta(itemmeta);
-
-                            e.getBlock().setType(Material.AIR);
-                            e.getBlock().getLocation().getWorld().dropItemNaturally(e.getBlock().getLocation(), item);
-                        }
-                    }
-                    plugin.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(b), null);
-                }
+            if (!e.getPlayer().hasPermission("EpicFurnaces.overview") && !e.getPlayer().hasPermission("epicfurnaces.*")) {
+                return;
             }
+            Block b = e.getBlock();
+            if (b.getType() != Material.FURNACE && b.getType() != Material.BURNING_FURNACE) {
+                return;
+            }
+            Furnace furnace = instance.getFurnaceManager().getFurnace(b);
+            int level = instance.getFurnaceManager().getFurnace(b).getLevel().getLevel();
+
+            if (level != 0) {
+                e.setCancelled(true);
+                ItemStack item = new ItemStack(Material.FURNACE, 1);
+                ItemMeta itemmeta = item.getItemMeta();
+
+                if (instance.getConfig().getBoolean("settings.Remember-furnace-Levels"))
+                    itemmeta.setDisplayName(Arconix.pl().getApi().format().formatText(Methods.formatName(level, furnace.getUses(), true)));
+
+                item.setItemMeta(itemmeta);
+
+                e.getBlock().setType(Material.AIR);
+                e.getBlock().getLocation().getWorld().dropItemNaturally(e.getBlock().getLocation(), item);
+            }
+            instance.getFurnaceManager().removeFurnace(b.getLocation());
+
         } catch (Exception ee) {
             Debugger.runReport(ee);
         }

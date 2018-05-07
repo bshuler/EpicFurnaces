@@ -13,25 +13,30 @@ import org.bukkit.event.player.PlayerJoinEvent;
  */
 public class LoginListeners implements Listener {
 
-    private EpicFurnaces plugin = EpicFurnaces.pl();
+    private final EpicFurnaces instance;
+
+    public LoginListeners(EpicFurnaces instance) {
+        this.instance = instance;
+    }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
         try {
             Player p = e.getPlayer();
-            if (p.isOp() && plugin.getConfig().getBoolean("settings.Helpful-Tips")) {
-                if (plugin.getServer().getPluginManager().getPlugin("Factions") != null && plugin.hooks.FactionsHook == null) {
-                    p.sendMessage("");
-                    p.sendMessage(Arconix.pl().getApi().format().formatText(plugin.references.getPrefix() + "&7Heres the deal,"));
-                    p.sendMessage(Arconix.pl().getApi().format().formatText("&7Because you're not using the offical versions of &6Factions"));
-                    p.sendMessage(Arconix.pl().getApi().format().formatText("&7I cannot give you full support out of the box."));
-                    p.sendMessage(Arconix.pl().getApi().format().formatText("&7Things will work without it but if you wan't a flawless"));
-                    p.sendMessage(Arconix.pl().getApi().format().formatText("&7experience you need to download"));
-                    p.sendMessage(Arconix.pl().getApi().format().formatText("&7&6https://www.spigotmc.org/resources/54337/&7."));
-                    p.sendMessage(Arconix.pl().getApi().format().formatText("&7turn &6Helpful-Tips &7off in the config."));
-                    p.sendMessage("");
-                }
+            if (!p.isOp() || !instance.getConfig().getBoolean("settings.Helpful-Tips")
+                    || instance.getServer().getPluginManager().getPlugin("Factions") == null
+                    || instance.hooks.FactionsHook != null) {
+                return;
             }
+            p.sendMessage("");
+            p.sendMessage(Arconix.pl().getApi().format().formatText(instance.references.getPrefix() + "&7Here's the deal,"));
+            p.sendMessage(Arconix.pl().getApi().format().formatText("&7Because you're not using the official versions of &6Factions"));
+            p.sendMessage(Arconix.pl().getApi().format().formatText("&7I cannot give you full support out of the box."));
+            p.sendMessage(Arconix.pl().getApi().format().formatText("&7Things will work without it but if you wan't a flawless"));
+            p.sendMessage(Arconix.pl().getApi().format().formatText("&7experience you need to download"));
+            p.sendMessage(Arconix.pl().getApi().format().formatText("&7&6https://www.spigotmc.org/resources/54337/&7."));
+            p.sendMessage(Arconix.pl().getApi().format().formatText("&7turn &6Helpful-Tips &7off in the config."));
+            p.sendMessage("");
         } catch (Exception ee) {
             Debugger.runReport(ee);
         }
