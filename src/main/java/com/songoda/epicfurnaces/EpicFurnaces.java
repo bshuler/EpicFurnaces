@@ -165,6 +165,7 @@ public class EpicFurnaces extends JavaPlugin implements Listener {
          * Dump FurnaceManager to file.
          */
         for (Furnace furnace : furnaceManager.getFurnaces().values()) {
+            if (furnace.getLocation() == null) continue;
             String locationStr = Arconix.pl().getApi().serialize().serializeLocation(furnace.getLocation());
             dataFile.getConfig().set("data.charged." + locationStr + ".level", furnace.getLevel().getLevel());
             dataFile.getConfig().set("data.charged." + locationStr + ".uses", furnace.getUses());
