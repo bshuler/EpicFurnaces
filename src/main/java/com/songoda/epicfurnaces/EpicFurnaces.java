@@ -165,13 +165,17 @@ public class EpicFurnaces extends JavaPlugin implements Listener {
          * Dump FurnaceManager to file.
          */
         for (Furnace furnace : furnaceManager.getFurnaces().values()) {
-            if (furnace.getLocation() == null) continue;
-            String locationStr = Arconix.pl().getApi().serialize().serializeLocation(furnace.getLocation());
-            dataFile.getConfig().set("data.charged." + locationStr + ".level", furnace.getLevel().getLevel());
-            dataFile.getConfig().set("data.charged." + locationStr + ".uses", furnace.getUses());
-            dataFile.getConfig().set("data.charged." + locationStr + ".tolevel", furnace.getTolevel());
-            dataFile.getConfig().set("data.charged." + locationStr + ".nickname", furnace.getNickname());
-            dataFile.getConfig().set("data.charged." + locationStr + ".accesslist", furnace.getAccessList());
+            if (furnace == null || furnace.getLocation() == null || furnace.getLocation().getWorld() == null) continue;
+            try {
+                String locationStr = Arconix.pl().getApi().serialize().serializeLocation(furnace.getLocation());
+                dataFile.getConfig().set("data.charged." + locationStr + ".level", furnace.getLevel().getLevel());
+                dataFile.getConfig().set("data.charged." + locationStr + ".uses", furnace.getUses());
+                dataFile.getConfig().set("data.charged." + locationStr + ".tolevel", furnace.getTolevel());
+                dataFile.getConfig().set("data.charged." + locationStr + ".nickname", furnace.getNickname());
+                dataFile.getConfig().set("data.charged." + locationStr + ".accesslist", furnace.getAccessList());
+            } catch (Exception e) {
+                System.out.println("Failed to save furance.");
+            }
         }
 
         //Save to file
