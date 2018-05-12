@@ -84,7 +84,6 @@ public class EpicFurnaces extends JavaPlugin implements Listener {
          */
         if (dataFile.getConfig().contains("data.charged")) {
             for (String locationStr : dataFile.getConfig().getConfigurationSection("data.charged").getKeys(false)) {
-                System.out.println(locationStr);
                 Location location = Arconix.pl().getApi().serialize().unserializeLocation(locationStr);
                 int level = dataFile.getConfig().getInt("data.charged." + locationStr + ".level");
                 int uses = dataFile.getConfig().getInt("data.charged." + locationStr + ".uses");
@@ -174,7 +173,7 @@ public class EpicFurnaces extends JavaPlugin implements Listener {
                 dataFile.getConfig().set("data.charged." + locationStr + ".nickname", furnace.getNickname());
                 dataFile.getConfig().set("data.charged." + locationStr + ".accesslist", furnace.getAccessList());
             } catch (Exception e) {
-                System.out.println("Failed to save furance.");
+                System.out.println("Failed to save furnace.");
             }
         }
 

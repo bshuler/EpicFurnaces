@@ -57,7 +57,7 @@ public class Furnace {
     public void openOverview(Player p) {
         try {
             EpicFurnaces instance = EpicFurnaces.getInstance();
-            if (!p.hasPermission("epicdispensers.overview")) return;
+            if (!p.hasPermission("epicfurnaces.overview")) return;
             instance.blockLoc.put(p.getName(), location.getBlock());
 
             Level nextLevel = instance.getLevelManager().getHighestLevel().getLevel() > level.getLevel() ? instance.getLevelManager().getLevel(level.getLevel() + 1) : null;
