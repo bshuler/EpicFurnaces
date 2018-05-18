@@ -5,6 +5,7 @@ import com.songoda.epicfurnaces.EpicFurnaces;
 import com.songoda.epicfurnaces.Furnace.Furnace;
 import com.songoda.epicfurnaces.Utils.Debugger;
 import com.songoda.epicfurnaces.Utils.Methods;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -15,6 +16,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.ArrayList;
 
 /**
  * Created by songoda on 2/26/2017.
@@ -30,8 +33,7 @@ public class BlockListeners implements Listener {
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent e) {
         try {
-            if (e.getBlock().getType() == Material.FURNACE) {
-                if (e.getItemInHand().getItemMeta().hasDisplayName()) {
+            if (e.getBlock().getType() != Material.FURNACE || !e.getItemInHand().getItemMeta().hasDisplayName()) return;
                     ItemStack item = e.getItemInHand();
 
                     byte b = e.getBlock().getData();
@@ -43,11 +45,10 @@ public class BlockListeners implements Listener {
                     location.getBlock().setData(b);
 
                     if (instance.getApi().getILevel(item) != 1) {
-                        instance.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(location.getBlock()) + ".level", instance.getApi().getILevel(item));
-                        instance.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(location.getBlock()) + ".uses", instance.getApi().getIUses(item));
+                        instance.getFurnaceManager().addFurnace(location, new Furnace(location, instance.getLevelManager().getLevel(instance.getApi().getILevel(item)), null, instance.getApi().getIUses(item), 0, new ArrayList<>()));
                     }
-                }
-            }
+
+
         } catch (Exception ee) {
             Debugger.runReport(ee);
         }
