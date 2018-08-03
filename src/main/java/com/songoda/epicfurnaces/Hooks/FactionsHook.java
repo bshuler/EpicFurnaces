@@ -1,7 +1,7 @@
-package com.songoda.epicfurnaces.Hooks;
+package com.songoda.epicfurnaces.hooks;
 
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.utils.Debugger;
 import me.markeh.factionsframework.entities.FPlayer;
 import me.markeh.factionsframework.entities.FPlayers;
 import me.markeh.factionsframework.entities.Faction;

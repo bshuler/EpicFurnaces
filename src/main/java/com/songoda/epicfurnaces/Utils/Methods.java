@@ -1,4 +1,4 @@
-package com.songoda.epicfurnaces.Utils;
+package com.songoda.epicfurnaces.utils;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
@@ -31,13 +31,7 @@ public class Methods {
                 location.setX(location.getX() + .5);
                 location.setY(location.getY() + .5);
                 location.setZ(location.getZ() + .5);
-                if (!plugin.v1_8 && !plugin.v1_7) {
-                    p.getWorld().spawnParticle(org.bukkit.Particle.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), location, 200, .5, .5, .5);
-                } else {
-                    p.getWorld().playEffect(location, org.bukkit.Effect.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), 1, 0);
-                    //Doesn't resolve --Nova
-                    //p.getWorld().spigot().playEffect(location, org.bukkit.Effect.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), 1, 0, (float) 0.5, (float) 0.5, (float) 0.5, 1, 200, 100);
-                }
+                p.getWorld().spawnParticle(org.bukkit.Particle.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), location, 200, .5, .5, .5);
             }
         } catch (Exception e) {
             Debugger.runReport(e);

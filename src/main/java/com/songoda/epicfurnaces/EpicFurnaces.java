@@ -3,13 +3,14 @@ package com.songoda.epicfurnaces;
 import com.songoda.arconix.api.utils.ConfigWrapper;
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.API.EpicFurnacesAPI;
-import com.songoda.epicfurnaces.Events.*;
-import com.songoda.epicfurnaces.Furnace.Furnace;
-import com.songoda.epicfurnaces.Furnace.FurnaceManager;
-import com.songoda.epicfurnaces.Furnace.LevelManager;
-import com.songoda.epicfurnaces.Handlers.CommandHandler;
-import com.songoda.epicfurnaces.Handlers.HookHandler;
-import com.songoda.epicfurnaces.Utils.SettingsManager;
+import com.songoda.epicfurnaces.events.*;
+import com.songoda.epicfurnaces.furnace.Furnace;
+import com.songoda.epicfurnaces.furnace.FurnaceManager;
+import com.songoda.epicfurnaces.furnace.LevelManager;
+import com.songoda.epicfurnaces.handlers.CommandHandler;
+import com.songoda.epicfurnaces.handlers.HookHandler;
+import com.songoda.epicfurnaces.player.PlayerDataManager;
+import com.songoda.epicfurnaces.utils.SettingsManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -30,16 +31,6 @@ import java.util.Map;
 public class EpicFurnaces extends JavaPlugin implements Listener {
     public static CommandSender console = Bukkit.getConsoleSender();
 
-    public Map<Player, Furnace> inShow = new HashMap<>();
-
-    public boolean v1_7 = Bukkit.getServer().getClass().getPackage().getName().contains("1_7");
-    public boolean v1_8 = Bukkit.getServer().getClass().getPackage().getName().contains("1_8");
-    public boolean v1_9 = Bukkit.getServer().getClass().getPackage().getName().contains("1_9");
-    public boolean v1_10 = Bukkit.getServer().getClass().getPackage().getName().contains("1_10");
-
-    public Map<String, Block> blockLoc = new HashMap<>();
-    public Map<Player, Location> nicknameQ = new HashMap<>();
-
     public ConfigWrapper langFile = new ConfigWrapper(this, "", "lang.yml");
     public ConfigWrapper dataFile = new ConfigWrapper(this, "", "data.yml");
     public ConfigWrapper furnaceRecipeFile;
@@ -55,6 +46,7 @@ public class EpicFurnaces extends JavaPlugin implements Listener {
 
     private LevelManager levelManager;
     private FurnaceManager furnaceManager;
+    private PlayerDataManager playerDataManager;
 
     private Locale locale;
 
@@ -78,6 +70,7 @@ public class EpicFurnaces extends JavaPlugin implements Listener {
         loadLevelManager();
 
         furnaceManager = new FurnaceManager();
+        playerDataManager = new PlayerDataManager();
 
         /*
          * Register furnaces into FurnaceManger from configuration
@@ -255,6 +248,10 @@ public class EpicFurnaces extends JavaPlugin implements Listener {
 
     public LevelManager getLevelManager() {
         return levelManager;
+    }
+
+    public PlayerDataManager getPlayerDataManager() {
+        return playerDataManager;
     }
 
     public Locale getLocale() {

@@ -1,7 +1,7 @@
-package com.songoda.epicfurnaces.Hooks;
+package com.songoda.epicfurnaces.hooks;
 
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;

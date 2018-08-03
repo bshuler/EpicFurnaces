@@ -1,11 +1,12 @@
-package com.songoda.epicfurnaces.Handlers;
+package com.songoda.epicfurnaces.handlers;
 
 import com.songoda.arconix.api.utils.ConfigWrapper;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Hooks.*;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.hooks.*;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 /**

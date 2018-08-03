@@ -1,8 +1,8 @@
-package com.songoda.epicfurnaces.Events;
+package com.songoda.epicfurnaces.events;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

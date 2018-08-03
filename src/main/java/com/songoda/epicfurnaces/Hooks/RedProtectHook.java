@@ -1,9 +1,9 @@
-package com.songoda.epicfurnaces.Hooks;
+package com.songoda.epicfurnaces.hooks;
 
 import br.net.fabiozumbi12.RedProtect.Bukkit.API.RedProtectAPI;
 import br.net.fabiozumbi12.RedProtect.Bukkit.RedProtect;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 

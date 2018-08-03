@@ -1,10 +1,12 @@
-package com.songoda.epicfurnaces.Events;
+package com.songoda.epicfurnaces.events;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Furnace.Furnace;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.furnace.Furnace;
+import com.songoda.epicfurnaces.player.PlayerData;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -26,32 +28,34 @@ public class ChatListeners implements Listener {
     @EventHandler
     public void chatListeners(AsyncPlayerChatEvent e) {
         try {
+            Player player = e.getPlayer();
+            PlayerData playerData = instance.getPlayerDataManager().getPlayerData(player);
+
             if (!e.isCancelled()) {
-                if (instance.nicknameQ.containsKey(e.getPlayer())) {
+                if (playerData.isSettingNickname()) {
                     e.setCancelled(true);
 
-                    Location loc = instance.nicknameQ.get(e.getPlayer());
-                    instance.nicknameQ.remove(e.getPlayer());
+                    playerData.setSettingNickname(false);
 
                     for (Furnace furnace : instance.getFurnaceManager().getFurnaces().values()) {
                         if (furnace.getNickname() == null) continue;
                         if (furnace.getNickname().equalsIgnoreCase(e.getMessage())) {
-                            e.getPlayer().sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.remote.nicknameinuse"));
+                            player.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.remote.nicknameinuse"));
                             return;
                         }
                     }
 
-                    Furnace furnace = instance.getFurnaceManager().getFurnace(loc);
+                    Furnace furnace = playerData.getLastFurace();
 
                     furnace.setNickname(e.getMessage());
 
                     List<String> list = new ArrayList<>();
 
                     furnace.clearAccessList();
-                    furnace.addToAccessList(e.getPlayer().getUniqueId().toString() + ":" + e.getPlayer().getName());
-                    instance.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(loc) + ".remoteAccessList", list);
+                    furnace.addToAccessList(player.getUniqueId().toString() + ":" + player.getName());
+                    instance.dataFile.getConfig().set("data.charged." + Arconix.pl().getApi().serialize().serializeLocation(furnace.getLocation()) + ".remoteAccessList", list);
 
-                    e.getPlayer().sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.remote.nicknamesuccess"));
+                    player.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.remote.nicknamesuccess"));
 
                 }
             }

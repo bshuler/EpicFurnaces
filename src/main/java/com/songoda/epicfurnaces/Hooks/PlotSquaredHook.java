@@ -1,8 +1,8 @@
-package com.songoda.epicfurnaces.Hooks;
+package com.songoda.epicfurnaces.hooks;
 
 import com.intellectualcrafters.plot.api.PlotAPI;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 

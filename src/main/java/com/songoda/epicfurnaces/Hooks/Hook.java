@@ -1,4 +1,4 @@
-package com.songoda.epicfurnaces.Hooks;
+package com.songoda.epicfurnaces.hooks;
 
 import com.songoda.epicfurnaces.EpicFurnaces;
 import org.bukkit.Bukkit;

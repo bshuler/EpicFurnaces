@@ -1,14 +1,12 @@
-package com.songoda.epicfurnaces.Furnace;
+package com.songoda.epicfurnaces.furnace;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Utils.Debugger;
-import com.songoda.epicfurnaces.Utils.Methods;
+import com.songoda.epicfurnaces.player.PlayerData;
+import com.songoda.epicfurnaces.utils.Debugger;
+import com.songoda.epicfurnaces.utils.Methods;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
@@ -57,8 +55,10 @@ public class Furnace {
     public void openOverview(Player p) {
         try {
             EpicFurnaces instance = EpicFurnaces.getInstance();
+            PlayerData playerData = instance.getPlayerDataManager().getPlayerData(p);
+
             if (!p.hasPermission("epicfurnaces.overview")) return;
-            instance.blockLoc.put(p.getName(), location.getBlock());
+            playerData.setLastFurace(this);
 
             Level nextLevel = instance.getLevelManager().getHighestLevel().getLevel() > level.getLevel() ? instance.getLevelManager().getLevel(level.getLevel() + 1) : null;
 
@@ -233,7 +233,7 @@ public class Furnace {
             }
 
             p.openInventory(i);
-            instance.inShow.put(p, this);
+            playerData.setInOverview(true);
         } catch (Exception e) {
             Debugger.runReport(e);
         }
@@ -242,7 +242,7 @@ public class Furnace {
     public void plus(FurnaceSmeltEvent e) {
         try {
             Block block = location.getBlock();
-            if (block.getType() == Material.FURNACE && block.getType() == Material.BURNING_FURNACE) {
+            if (block.getType() == Material.FURNACE) {
                 return;
             }
 
@@ -290,7 +290,7 @@ public class Furnace {
 
             int r = Integer.parseInt(amt[0]);
             if (Integer.parseInt(amt[0]) != Integer.parseInt(amt[1]))
-                r = (int) (Math.random() * ((Integer.parseInt(amt[1]) - Integer.parseInt(amt[0])) + 1)) + Integer.parseInt(amt[0]);
+                r = (int) (Math.random() * ((Integer.parseInt(amt[1]) - Integer.parseInt(amt[0])))) + Integer.parseInt(amt[0]);
 
 
             if (e.getResult() != null) {
@@ -362,29 +362,16 @@ public class Furnace {
                 player.sendMessage(instance.getLocale().getMessage("event.upgrade.maxed", level.getLevel()));
             }
             Location loc = location.clone().add(.5, .5, .5);
-            if (!instance.v1_8 && !instance.v1_7) {
+
                 player.getWorld().spawnParticle(org.bukkit.Particle.valueOf(instance.getConfig().getString("settings.Upgrade-particle-type")), loc, 200, .5, .5, .5);
-            } else {
-                //Doesn't resolve --Nova
-                player.getWorld().playEffect(loc, org.bukkit.Effect.valueOf(instance.getConfig().getString("settings.Upgrade-particle-type")), 1, 0);
-                //player.getWorld().spigot().playEffect(loc, org.bukkit.Effect.valueOf(instance.getConfig().getString("settings.Upgrade-particle-type")), 1, 0, (float) 1, (float) 1, (float) 1, 1, 200, 10);
-            }
             if (instance.getConfig().getBoolean("settings.sounds")) {
                 if (instance.getLevelManager().getHighestLevel() == level) {
-                    if (!instance.v1_8 && !instance.v1_7) {
                         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.6F, 15.0F);
-                    } else {
-                        player.playSound(player.getLocation(), org.bukkit.Sound.valueOf("LEVEL_UP"), 2F, 15.0F);
-                    }
                 } else {
-                    if (!instance.v1_10 && !instance.v1_9 && !instance.v1_8 && !instance.v1_7) {
                         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 2F, 25.0F);
-                        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_CHIME, 2F, 25.0F);
-                        Bukkit.getScheduler().scheduleSyncDelayedTask(instance, () -> player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_CHIME, 1.2F, 35.0F), 5L);
-                        Bukkit.getScheduler().scheduleSyncDelayedTask(instance, () -> player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_CHIME, 1.8F, 35.0F), 10L);
-                    } else {
-                        player.playSound(player.getLocation(), org.bukkit.Sound.valueOf("LEVEL_UP"), 2F, 25.0F);
-                    }
+                        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_CHIME, 2F, 25.0F);
+                        Bukkit.getScheduler().scheduleSyncDelayedTask(instance, () -> player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_CHIME, 1.2F, 35.0F), 5L);
+                        Bukkit.getScheduler().scheduleSyncDelayedTask(instance, () -> player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_CHIME, 1.8F, 35.0F), 10L);
                 }
             }
         } catch (Exception ex) {
@@ -398,7 +385,7 @@ public class Furnace {
         try {
             Block block = location.getBlock();
             if (block != null && block.getType() != Material.AIR) {
-                if (block.getType() == Material.FURNACE || block.getType() == Material.BURNING_FURNACE) {
+                if (block.getType() == Material.FURNACE) {
                     Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(instance, () -> {
 
 

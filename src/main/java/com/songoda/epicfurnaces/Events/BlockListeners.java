@@ -1,11 +1,10 @@
-package com.songoda.epicfurnaces.Events;
+package com.songoda.epicfurnaces.events;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Furnace.Furnace;
-import com.songoda.epicfurnaces.Utils.Debugger;
-import com.songoda.epicfurnaces.Utils.Methods;
-import org.bukkit.Bukkit;
+import com.songoda.epicfurnaces.furnace.Furnace;
+import com.songoda.epicfurnaces.utils.Debugger;
+import com.songoda.epicfurnaces.utils.Methods;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -36,13 +35,11 @@ public class BlockListeners implements Listener {
             if (e.getBlock().getType() != Material.FURNACE || !e.getItemInHand().getItemMeta().hasDisplayName()) return;
                     ItemStack item = e.getItemInHand();
 
-                    byte b = e.getBlock().getData();
 
                     e.getBlock().setType(Material.AIR);
 
                     Location location = e.getBlock().getLocation();
                     location.getBlock().setType(Material.FURNACE);
-                    location.getBlock().setData(b);
 
                     if (instance.getApi().getILevel(item) != 1) {
                         instance.getFurnaceManager().addFurnace(location, new Furnace(location, instance.getLevelManager().getLevel(instance.getApi().getILevel(item)), null, instance.getApi().getIUses(item), 0, new ArrayList<>()));
@@ -61,7 +58,7 @@ public class BlockListeners implements Listener {
                 return;
             }
             Block b = e.getBlock();
-            if (b.getType() != Material.FURNACE && b.getType() != Material.BURNING_FURNACE) {
+            if (b.getType() != Material.FURNACE) {
                 return;
             }
             Furnace furnace = instance.getFurnaceManager().getFurnace(b);

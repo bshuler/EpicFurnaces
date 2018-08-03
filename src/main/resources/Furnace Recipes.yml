@@ -1,4 +1,4 @@
-# TurboCharged Furnace Recipe file
+# TurboCharged furnace Recipe file
 Recipes:
   DIAMOND_SWORD:
     result: DIAMOND
@@ -9,7 +9,7 @@ Recipes:
   DIAMOND_AXE:
     result: DIAMOND
     amount: 3
-  DIAMOND_SPADE:
+  DIAMOND_SHOVEL:
     result: DIAMOND
     amount: 1
   DIAMOND_HOE:
@@ -36,7 +36,7 @@ Recipes:
   IRON_AXE:
     result: IRON_INGOT
     amount: 3
-  IRON_SPADE:
+  IRON_SHOVEL:
     result: IRON_INGOT
     amount: 1
   IRON_HOE:
@@ -54,31 +54,31 @@ Recipes:
   IRON_BOOTS:
     result: IRON_INGOT
     amount: 4
-  GOLD_SWORD:
+  GOLDEN_SWORD:
     result: GOLD_INGOT
     amount: 2
-  GOLD_PICKAXE:
+  GOLDEN_PICKAXE:
     result: GOLD_INGOT
     amount: 3
-  GOLD_AXE:
+  GOLDEN_AXE:
     result: GOLD_INGOT
     amount: 3
-  GOLD_SPADE:
+  GOLDEN_SHOVEL:
     result: GOLD_INGOT
     amount: 1
-  GOLD_HOE:
+  GOLDEN_HOE:
     result: GOLD_INGOT
     amount: 2
-  GOLD_HELMET:
+  GOLDEN_HELMET:
     result: GOLD_INGOT
     amount: 5
-  GOLD_CHESTPLATE:
+  GOLDEN_CHESTPLATE:
     result: GOLD_INGOT
     amount: 8
-  GOLD_LEGGINGS:
+  GOLDEN_LEGGINGS:
     result: GOLD_INGOT
     amount: 7
-  GOLD_BOOTS:
+  GOLDEN_BOOTS:
     result: GOLD_INGOT
     amount: 4
   CHAINMAIL_HELMET:
@@ -114,25 +114,25 @@ Recipes:
   STONE_AXE:
     result: COBBLESTONE
     amount: 3
-  STONE_SPADE:
+  STONE_SHOVEL:
     result: COBBLESTONE
     amount: 1
   STONE_HOE:
     result: COBBLESTONE
     amount: 2
-  WOOD_SWORD:
+  WOODEN_SWORD:
     result: COAL
     amount: 2
-  WOOD_PICKAXE:
+  WOODEN_PICKAXE:
     result: COAL
     amount: 3
-  WOOD_AXE:
+  WOODEN_AXE:
     result: COAL
     amount: 3
-  WOOD_SPADE:
+  WOODEN_SHOVEL:
     result: COAL
     amount: 1
-  WOOD_HOE:
+  WOODEN_HOE:
     result: COAL
     amount: 2
   BOW:
@@ -144,7 +144,7 @@ Recipes:
   COMPASS:
     result: IRON_INGOT
     amount: 4
-  WATCH:
+  CLOCK:
     result: GOLD_INGOT
     amount: 4
   SHEARS:

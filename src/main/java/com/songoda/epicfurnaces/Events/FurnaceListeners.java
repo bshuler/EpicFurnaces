@@ -1,9 +1,9 @@
-package com.songoda.epicfurnaces.Events;
+package com.songoda.epicfurnaces.events;
 
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Furnace.Furnace;
-import com.songoda.epicfurnaces.Furnace.Level;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.furnace.Furnace;
+import com.songoda.epicfurnaces.furnace.Level;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

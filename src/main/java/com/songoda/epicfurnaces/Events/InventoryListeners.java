@@ -1,9 +1,10 @@
-package com.songoda.epicfurnaces.Events;
+package com.songoda.epicfurnaces.events;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Furnace.Furnace;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.furnace.Furnace;
+import com.songoda.epicfurnaces.player.PlayerData;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -29,8 +30,6 @@ public class InventoryListeners implements Listener {
     @EventHandler
     public void onInventoryMove(InventoryMoveItemEvent e) {
         if (!e.getDestination().getType().equals(InventoryType.FURNACE)
-                || instance.v1_7
-                || instance.v1_8
                 || e.getDestination().getItem(0) == null
                 || e.getDestination().getItem(0).getAmount() != 1) {
             return;
@@ -43,19 +42,17 @@ public class InventoryListeners implements Listener {
     public void onInventoryClick(InventoryClickEvent e) {
         try {
             Player p = (Player) e.getWhoClicked();
+            PlayerData playerData = instance.getPlayerDataManager().getPlayerData(p);
+
             if (e.getInventory().getType().equals(InventoryType.FURNACE)
                     && e.getInventory().getHolder() != null
                     && e.getSlotType() == InventoryType.SlotType.CRAFTING) {
                 Block block;
-                if (!instance.v1_7 && !instance.v1_8) {
-                    block = e.getInventory().getLocation().getBlock();
-                } else if (instance.blockLoc.containsKey(p.getName())) {
-                    block = instance.blockLoc.get(p.getName());
-                } else return;
+                block = e.getInventory().getLocation().getBlock();
                 instance.getFurnaceManager().getFurnace(block).updateCook();
-            } else if (instance.inShow.containsKey(p)) {
+            } else if (playerData.isInOverview()) {
                 e.setCancelled(true);
-                Furnace furnace = instance.inShow.get(p);
+                Furnace furnace = playerData.getLastFurace();
                 if (e.getSlot() == 11) {
                     if (!e.getCurrentItem().getItemMeta().getDisplayName().equals("§l")) {
                         furnace.upgrade("XP", p);
@@ -70,7 +67,7 @@ public class InventoryListeners implements Listener {
                     if (!e.getCurrentItem().getItemMeta().getDisplayName().equals("§l")) {
                         if (e.getClick().isLeftClick()) {
                             p.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.remote.enter"));
-                            instance.nicknameQ.put(p, furnace.getLocation());
+                            playerData.setSettingNickname(true);
                             p.closeInventory();
                         } else if (e.getClick().isRightClick()) {
                             List<String> list = new ArrayList<>();
@@ -113,8 +110,7 @@ public class InventoryListeners implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         try {
-            final Player player = (Player) event.getPlayer();
-            instance.inShow.remove(player);
+            instance.getPlayerDataManager().getPlayerData((Player)event.getPlayer()).setInOverview(false);
         } catch (Exception e) {
             Debugger.runReport(e);
         }

@@ -1,6 +1,6 @@
 package com.songoda.epicfurnaces.API;
 
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.inventory.ItemStack;
 
 /**

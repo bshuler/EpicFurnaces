@@ -1,7 +1,7 @@
-package com.songoda.epicfurnaces.Events;
+package com.songoda.epicfurnaces.events;
 
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Utils.Debugger;
+import com.songoda.epicfurnaces.utils.Debugger;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -33,8 +33,8 @@ public class InteractListeners implements Listener {
                     || !instance.hooks.canBuild(player, e.getClickedBlock().getLocation())
                     || e.getAction() != Action.LEFT_CLICK_BLOCK
                     || player.isSneaking()
-                    || (block.getType() != Material.FURNACE && block.getType() != Material.BURNING_FURNACE)
-                    || player.getItemInHand().getType().name().contains("PICKAXE")) {
+                    || (block.getType() != Material.FURNACE)
+                    || player.getInventory().getItemInMainHand().getType().name().contains("PICKAXE")) {
                 return;
             }
 

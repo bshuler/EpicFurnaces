@@ -1,4 +1,4 @@
-package com.songoda.epicfurnaces.Furnace;
+package com.songoda.epicfurnaces.furnace;
 
 import com.songoda.epicfurnaces.EpicFurnaces;
 

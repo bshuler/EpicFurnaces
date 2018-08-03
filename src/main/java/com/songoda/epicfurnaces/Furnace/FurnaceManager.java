@@ -1,13 +1,10 @@
-package com.songoda.epicfurnaces.Furnace;
+package com.songoda.epicfurnaces.furnace;
 
 import com.songoda.epicfurnaces.EpicFurnaces;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class FurnaceManager {
 

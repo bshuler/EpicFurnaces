@@ -1,10 +1,10 @@
-package com.songoda.epicfurnaces.Handlers;
+package com.songoda.epicfurnaces.handlers;
 
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnaces;
-import com.songoda.epicfurnaces.Furnace.Furnace;
-import com.songoda.epicfurnaces.Utils.Debugger;
-import com.songoda.epicfurnaces.Utils.SettingsManager;
+import com.songoda.epicfurnaces.furnace.Furnace;
+import com.songoda.epicfurnaces.utils.Debugger;
+import com.songoda.epicfurnaces.utils.SettingsManager;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

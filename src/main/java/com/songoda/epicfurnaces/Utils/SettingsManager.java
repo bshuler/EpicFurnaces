@@ -1,4 +1,4 @@
-package com.songoda.epicfurnaces.Utils;
+package com.songoda.epicfurnaces.utils;
 
 import com.songoda.arconix.api.utils.ConfigWrapper;
 import com.songoda.arconix.plugin.Arconix;
@@ -126,7 +126,7 @@ public class SettingsManager implements Listener {
                         lore.add(Arconix.pl().getApi().format().formatText("&9" + str));
                         break;
                     case "java.lang.Integer":
-                        item.setType(Material.WATCH);
+                        item.setType(Material.CLOCK);
 
                         int in = (Integer) plugin.getConfig().get("settings." + key);
                         lore.add(Arconix.pl().getApi().format().formatText("&5" + in));
@@ -153,9 +153,6 @@ public class SettingsManager implements Listener {
     public void updateSettings() {
         for (settings s : settings.values()) {
             if (s.setting.equals("Upgrade-particle-type")) {
-                if (plugin.v1_7 || plugin.v1_8) {
-                    plugin.getConfig().addDefault("settings." + s.setting, "WITCH_MAGIC");
-                }
                 plugin.getConfig().addDefault("settings." + s.setting, s.option);
             } else
                 plugin.getConfig().addDefault("settings." + s.setting, s.option);
@@ -182,8 +179,8 @@ public class SettingsManager implements Listener {
 
     public enum settings {
 
-        o1("ECO-Icon", "DOUBLE_PLANT"),
-        o2("XP-Icon", "EXP_BOTTLE"),
+        o1("ECO-Icon", "SUNFLOWER"),
+        o2("XP-Icon", "EXPERIENCE_BOTTLE"),
 
         o3("Upgrade-with-material", true),
         o4("Upgrade-with-eco", true),
