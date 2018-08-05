@@ -242,9 +242,7 @@ public class Furnace {
     public void plus(FurnaceSmeltEvent e) {
         try {
             Block block = location.getBlock();
-            if (block.getType() == Material.FURNACE) {
-                return;
-            }
+            if (block.getType() != Material.FURNACE) return;
 
             uses++;
             tolevel++;
@@ -345,10 +343,6 @@ public class Furnace {
         } catch (Exception ex) {
             Debugger.runReport(ex);
         }
-    }
-
-    public boolean isMaxed(int level) {
-        return EpicFurnaces.getInstance().getConfig().contains("settings.levels.Level-" + (level + 1));
     }
 
 

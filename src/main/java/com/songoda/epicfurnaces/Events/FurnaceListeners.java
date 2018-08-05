@@ -4,6 +4,7 @@ import com.songoda.epicfurnaces.EpicFurnaces;
 import com.songoda.epicfurnaces.furnace.Furnace;
 import com.songoda.epicfurnaces.furnace.Level;
 import com.songoda.epicfurnaces.utils.Debugger;
+import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -32,7 +33,7 @@ public class FurnaceListeners implements Listener {
             Furnace furnace = instance.getFurnaceManager().getFurnace(b.getLocation());
 
             if (furnace != null)
-                instance.getFurnaceManager().getFurnace(b.getLocation()).plus(e);
+                furnace.plus(e);
         } catch (Exception ee) {
             Debugger.runReport(ee);
         }
