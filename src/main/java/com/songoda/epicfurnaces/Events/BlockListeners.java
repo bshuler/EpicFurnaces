@@ -35,11 +35,7 @@ public class BlockListeners implements Listener {
             if (e.getBlock().getType() != Material.FURNACE || !e.getItemInHand().getItemMeta().hasDisplayName()) return;
                     ItemStack item = e.getItemInHand();
 
-
-                    e.getBlock().setType(Material.AIR);
-
                     Location location = e.getBlock().getLocation();
-                    location.getBlock().setType(Material.FURNACE);
 
                     if (instance.getApi().getILevel(item) != 1) {
                         instance.getFurnaceManager().addFurnace(location, new Furnace(location, instance.getLevelManager().getLevel(instance.getApi().getILevel(item)), null, instance.getApi().getIUses(item), 0, new ArrayList<>()));
