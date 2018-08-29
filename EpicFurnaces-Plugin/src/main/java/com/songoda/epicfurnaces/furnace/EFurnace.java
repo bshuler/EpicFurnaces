@@ -306,13 +306,13 @@ public class EFurnace implements Furnace {
         try {
             if (instance.getLevelManager().getLevels().containsKey(this.level.getLevel() + 1)) {
 
-                Level level = instance.getLevelManager().getLevel(this.level.getLevel() + 1);
                 int cost;
                 if (type.equals("XP")) {
                     cost = level.getCostExperiance();
                 } else {
                     cost = level.getCostEconomy();
                 }
+                Level level = instance.getLevelManager().getLevel(this.level.getLevel() + 1);
 
                 if (type.equals("ECO")) {
                     if (instance.getServer().getPluginManager().getPlugin("Vault") != null) {
