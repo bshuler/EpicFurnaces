@@ -8,6 +8,7 @@ import com.songoda.epicfurnaces.api.EpicFurnaces;
 import com.songoda.epicfurnaces.api.furnace.Furnace;
 import com.songoda.epicfurnaces.api.utils.ClaimableProtectionPluginHook;
 import com.songoda.epicfurnaces.api.utils.ProtectionPluginHook;
+import com.songoda.epicfurnaces.command.CommandManager;
 import com.songoda.epicfurnaces.furnace.EFurnaceManager;
 import com.songoda.epicfurnaces.furnace.ELevelManager;
 import com.songoda.epicfurnaces.hooks.*;
@@ -54,6 +55,7 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
     private ELevelManager levelManager;
     private EFurnaceManager furnaceManager;
     private PlayerDataManager playerDataManager;
+    private CommandManager commandManager;
 
     private Locale locale;
 
@@ -95,8 +97,9 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
 
         loadLevelManager();
 
-        furnaceManager = new EFurnaceManager();
-        playerDataManager = new PlayerDataManager();
+        this.furnaceManager = new EFurnaceManager();
+        this.playerDataManager = new PlayerDataManager();
+        this.commandManager = new CommandManager(this);
 
         /*
          * Register furnaces into FurnaceManger from configuration
@@ -122,8 +125,6 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
         new MassiveStats(this, 900);
 
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, this::saveToFile, 6000, 6000);
-
-        this.getCommand("EpicFurnaces").setExecutor(new CommandHandler(this));
 
         PluginManager pluginManager = Bukkit.getPluginManager();
 
@@ -348,6 +349,11 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
 
     public ConfigWrapper getFurnaceRecipeFile() {
         return furnaceRecipeFile;
+    }
+
+
+    public CommandManager getCommandManager() {
+        return commandManager;
     }
 
     public EFurnaceManager getFurnaceManager() {
