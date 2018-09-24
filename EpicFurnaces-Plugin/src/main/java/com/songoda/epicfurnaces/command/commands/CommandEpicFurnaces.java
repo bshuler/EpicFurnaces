@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 public class CommandEpicFurnaces extends AbstractCommand {
 
     public CommandEpicFurnaces() {
-        super("EpicSpawners", null, false);
+        super("EpicFurnaces", null, false);
     }
 
     @Override

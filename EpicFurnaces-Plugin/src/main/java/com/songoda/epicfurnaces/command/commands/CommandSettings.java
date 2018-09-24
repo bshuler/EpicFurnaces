@@ -20,16 +20,16 @@ public class CommandSettings extends AbstractCommand {
 
     @Override
     public String getPermissionNode() {
-        return "epicspawners.admin";
+        return "epicfurnaces.admin";
     }
 
     @Override
     public String getSyntax() {
-        return "/es settings";
+        return "/ef settings";
     }
 
     @Override
     public String getDescription() {
-        return "Edit the EpicSpawners Settings.";
+        return "Edit the EpicFurnaces Settings.";
     }
 }

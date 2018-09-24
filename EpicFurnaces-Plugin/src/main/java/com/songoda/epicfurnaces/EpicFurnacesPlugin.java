@@ -14,7 +14,6 @@ import com.songoda.epicfurnaces.furnace.ELevelManager;
 import com.songoda.epicfurnaces.hooks.*;
 import com.songoda.epicfurnaces.listeners.*;
 import com.songoda.epicfurnaces.furnace.EFurnace;
-import com.songoda.epicfurnaces.handlers.CommandHandler;
 import com.songoda.epicfurnaces.player.PlayerDataManager;
 import com.songoda.epicfurnaces.utils.Debugger;
 import com.songoda.epicfurnaces.utils.SettingsManager;
