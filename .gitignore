@@ -5,3 +5,7 @@ out/
 /EpicFurnaces.iml
 /src/main/resources/META-INF/MANIFEST.MF
 /target/
+
+EpicFurnaces-API/EpicFurnaces-API\.iml
+
+EpicFurnaces-Plugin/EpicFurnaces-Plugin\.iml
