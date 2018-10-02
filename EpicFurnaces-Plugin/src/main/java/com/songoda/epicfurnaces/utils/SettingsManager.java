@@ -125,7 +125,7 @@ public class SettingsManager implements Listener {
 
         int slot = 10;
         for (String key : instance.getConfig().getDefaultSection().getKeys(false)) {
-            ItemStack item = new ItemStack(Material.WOOL, 1, (byte) (slot - 9)); //ToDo: Make this function as it was meant to.
+            ItemStack item = new ItemStack(Material.WHITE_WOOL, 1, (byte) (slot - 9)); //ToDo: Make this function as it was meant to.
             ItemMeta meta = item.getItemMeta();
             meta.setLore(Collections.singletonList(TextComponent.formatText("&6Click To Edit This Category.")));
             meta.setDisplayName(TextComponent.formatText("&f&l" + key));
@@ -148,14 +148,17 @@ public class SettingsManager implements Listener {
             ItemMeta meta = item.getItemMeta();
             meta.setDisplayName(TextComponent.formatText("&6" + key));
 
-                        break;
-                    case "java.lang.String":
-                        item.setType(Material.PAPER);
-                        String str = (String) plugin.getConfig().get("settings." + key);
-                        lore.add(Arconix.pl().getApi().format().formatText("&9" + str));
-                        break;
-                    case "java.lang.Integer":
-                        item.setType(Material.WATCH);
+            List<String> lore = new ArrayList<>();
+            if (config.isBoolean(fKey)) {
+                item.setType(Material.LEVER);
+                lore.add(TextComponent.formatText(config.getBoolean(fKey) ? "&atrue" : "&cfalse"));
+            } else if (config.isString(fKey)) {
+                item.setType(Material.PAPER);
+                lore.add(TextComponent.formatText("&9" + config.getString(fKey)));
+            } else if (config.isInt(fKey)) {
+                item.setType(Material.CLOCK);
+                lore.add(TextComponent.formatText("&5" + config.getInt(fKey)));
+            }
 
             if (defs.getConfig().contains(fKey)) {
                 String text = defs.getConfig().getString(key);
