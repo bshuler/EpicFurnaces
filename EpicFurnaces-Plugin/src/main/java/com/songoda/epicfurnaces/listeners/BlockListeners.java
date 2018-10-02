@@ -67,7 +67,7 @@ public class BlockListeners implements Listener {
                 ItemStack item = new ItemStack(Material.FURNACE, 1);
                 ItemMeta itemmeta = item.getItemMeta();
 
-                if (instance.getConfig().getBoolean("settings.Remember-furnace-Levels"))
+                if (instance.getConfig().getBoolean("ain.Remember Furnace Item Levels"))
                     itemmeta.setDisplayName(TextComponent.formatText(Methods.formatName(level, furnace.getUses(), true)));
 
                 item.setItemMeta(itemmeta);

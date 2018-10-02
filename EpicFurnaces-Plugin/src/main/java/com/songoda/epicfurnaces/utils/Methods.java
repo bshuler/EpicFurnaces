@@ -16,7 +16,7 @@ public class Methods {
     public static ItemStack getGlass() {
         try {
             EpicFurnacesPlugin plugin = EpicFurnacesPlugin.getInstance();
-            return Arconix.pl().getApi().getGUI().getGlass(plugin.getConfig().getBoolean("settings.Rainbow-Glass"), plugin.getConfig().getInt("settings.Glass-Type-1"));
+            return Arconix.pl().getApi().getGUI().getGlass(plugin.getConfig().getBoolean("Interfaces.Replace Glass Type 1 With Rainbow Glass"), plugin.getConfig().getInt("Interfaces.Glass Type 1"));
         } catch (Exception e) {
             Debugger.runReport(e);
         }
@@ -31,7 +31,7 @@ public class Methods {
                 location.setX(location.getX() + .5);
                 location.setY(location.getY() + .5);
                 location.setZ(location.getZ() + .5);
-                p.getWorld().spawnParticle(org.bukkit.Particle.valueOf(plugin.getConfig().getString("settings.Upgrade-particle-type")), location, 200, .5, .5, .5);
+                p.getWorld().spawnParticle(org.bukkit.Particle.valueOf(plugin.getConfig().getString("Main.Upgrade Particle Type")), location, 200, .5, .5, .5);
             }
         } catch (Exception e) {
             Debugger.runReport(e);
@@ -42,9 +42,9 @@ public class Methods {
         try {
             EpicFurnacesPlugin plugin = EpicFurnacesPlugin.getInstance();
             if (type)
-                return Arconix.pl().getApi().getGUI().getGlass(false, plugin.getConfig().getInt("settings.Glass-Type-2"));
+                return Arconix.pl().getApi().getGUI().getGlass(false, plugin.getConfig().getInt("Interfaces.Glass Type 2"));
             else
-                return Arconix.pl().getApi().getGUI().getGlass(false, plugin.getConfig().getInt("settings.Glass-Type-3"));
+                return Arconix.pl().getApi().getGUI().getGlass(false, plugin.getConfig().getInt("Interfaces.Glass Type 3"));
         } catch (Exception e) {
             Debugger.runReport(e);
         }

@@ -1,11 +1,14 @@
 package com.songoda.epicfurnaces.utils;
 
+import com.songoda.arconix.api.methods.formatting.TextComponent;
 import com.songoda.arconix.api.utils.ConfigWrapper;
 import com.songoda.arconix.plugin.Arconix;
 import com.songoda.epicfurnaces.EpicFurnacesPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,109 +18,135 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by songo on 6/4/2017.
  */
 public class SettingsManager implements Listener {
 
-    private EpicFurnacesPlugin plugin = EpicFurnacesPlugin.getInstance();
+    private static final Pattern SETTINGS_PATTERN = Pattern.compile("(.{1,28}(?:\\s|$))|(.{0,28})", Pattern.DOTALL);
 
     private static ConfigWrapper defs;
+    private final EpicFurnacesPlugin instance;
+    private String pluginName = "EpicFurnaces";
+    private Map<Player, String> cat = new HashMap<>();
+    private Map<Player, String> current = new HashMap<>();
 
-    public SettingsManager() {
+    public SettingsManager(EpicFurnacesPlugin plugin) {
+        this.instance = plugin;
+
         plugin.saveResource("SettingDefinitions.yml", true);
         defs = new ConfigWrapper(plugin, "", "SettingDefinitions.yml");
-        defs.createNewFile("Loading data file", "EpicFurnaces SettingDefinitions file");
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        defs.createNewFile("Loading data file", pluginName + " SettingDefinitions file");
+        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    public Map<Player, String> current = new HashMap<>();
-
     @EventHandler
-    public void onInventoryClick(InventoryClickEvent e) {
-        if (e.getCurrentItem() != null) {
-            if (e.getInventory().getTitle().equals("EpicFurnaces Settings Editor")) {
-                e.setCancelled(true);
+    public void onInventoryClick(InventoryClickEvent event) {
+        ItemStack clickedItem = event.getCurrentItem();
 
-                String key = e.getCurrentItem().getItemMeta().getDisplayName().substring(2);
+        if (event.getInventory() != event.getWhoClicked().getOpenInventory().getTopInventory()
+                || clickedItem == null || !clickedItem.hasItemMeta()
+                || !clickedItem.getItemMeta().hasDisplayName()) {
+            return;
+        }
 
-                Player p = (Player) e.getWhoClicked();
+        if (event.getInventory().getTitle().equals(pluginName + " Settings Manager")) {
+            event.setCancelled(true);
+            if (clickedItem.getType().name().contains("STAINED_GLASS")) return;
 
-                if (plugin.getConfig().get("settings." + key).getClass().getName().equals("java.lang.Boolean")) {
-                    boolean bool = (Boolean) plugin.getConfig().get("settings." + key);
-                    if (!bool)
-                        plugin.getConfig().set("settings." + key, true);
-                    else
-                        plugin.getConfig().set("settings." + key, false);
-                    finishEditing(p);
-                } else {
-                    editObject(p, key);
-                }
+            String type = ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName());
+            this.cat.put((Player) event.getWhoClicked(), type);
+            this.openEditor((Player) event.getWhoClicked());
+        } else if (event.getInventory().getTitle().equals(pluginName + " Settings Editor")) {
+            event.setCancelled(true);
+            if (clickedItem.getType().name().contains("STAINED_GLASS")) return;
+
+            Player player = (Player) event.getWhoClicked();
+
+            String key = cat.get(player) + "." + ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName());
+
+            if (instance.getConfig().get(key).getClass().getName().equals("java.lang.Boolean")) {
+                this.instance.getConfig().set(key, !instance.getConfig().getBoolean(key));
+                this.finishEditing(player);
+            } else {
+                this.editObject(player, key);
             }
         }
     }
 
     @EventHandler
-    public void onChat(AsyncPlayerChatEvent e) {
-        final Player p = e.getPlayer();
-        if (current.containsKey(p)) {
-            if (plugin.getConfig().get("settings." + current.get(p)).getClass().getName().equals("java.lang.Integer")) {
-                plugin.getConfig().set("settings." + current.get(p), Integer.parseInt(e.getMessage()));
-            } else if (plugin.getConfig().get("settings." + current.get(p)).getClass().getName().equals("java.lang.Double")) {
-                plugin.getConfig().set("settings." + current.get(p), Double.parseDouble(e.getMessage()));
-            } else if (plugin.getConfig().get("settings." + current.get(p)).getClass().getName().equals("java.lang.String")) {
-                plugin.getConfig().set("settings." + current.get(p), e.getMessage());
-            }
-            finishEditing(p);
-            e.setCancelled(true);
+    public void onChat(AsyncPlayerChatEvent event) {
+        Player player = event.getPlayer();
+        if (!current.containsKey(player)) return;
+
+        String value = current.get(player);
+        FileConfiguration config = instance.getConfig();
+        if (config.isInt(value)) {
+            config.set(value, Integer.parseInt(event.getMessage()));
+        } else if (config.isDouble(value)) {
+            config.set(value, Double.parseDouble(event.getMessage()));
+        } else if (config.isString(value)) {
+            config.set(value, event.getMessage());
         }
+
+        this.finishEditing(player);
+        event.setCancelled(true);
     }
 
-    public void finishEditing(Player p) {
-        current.remove(p);
-        plugin.saveConfig();
-        openEditor(p);
+    public void finishEditing(Player player) {
+        this.current.remove(player);
+        this.instance.saveConfig();
+        this.openEditor(player);
     }
 
 
-    public void editObject(Player p, String current) {
-        this.current.put(p, current);
-        p.closeInventory();
-        p.sendMessage("");
-        p.sendMessage(Arconix.pl().getApi().format().formatText("&7Please enter a value for &6" + current + "&7."));
-        if (plugin.getConfig().get("settings." + current).getClass().getName().equals("java.lang.Integer")) {
-            p.sendMessage(Arconix.pl().getApi().format().formatText("&cUse only numbers."));
+    public void editObject(Player player, String current) {
+        this.current.put(player, ChatColor.stripColor(current));
+
+        player.closeInventory();
+        player.sendMessage("");
+        player.sendMessage(TextComponent.formatText("&7Please enter a value for &6" + current + "&7."));
+        if (instance.getConfig().isInt(current) || instance.getConfig().isDouble(current)) {
+            player.sendMessage(TextComponent.formatText("&cUse only numbers."));
         }
-        p.sendMessage("");
+        player.sendMessage("");
     }
 
-    public static void openEditor(Player p) {
-        EpicFurnacesPlugin plugin = EpicFurnacesPlugin.getInstance();
-        Inventory i = Bukkit.createInventory(null, 54, "EpicFurnaces Settings Editor");
+    public void openSettingsManager(Player player) {
+        Inventory inventory = Bukkit.createInventory(null, 27, pluginName + " Settings Manager");
+        ItemStack glass = Methods.getGlass();
+        for (int i = 0; i < inventory.getSize(); i++) {
+            inventory.setItem(i, glass);
+        }
 
-        int num = 0;
-        ConfigurationSection cs = plugin.getConfig().getConfigurationSection("settings");
-        for (String key : cs.getKeys(true)) {
+        int slot = 10;
+        for (String key : instance.getConfig().getDefaultSection().getKeys(false)) {
+            ItemStack item = new ItemStack(Material.WOOL, 1, (byte) (slot - 9)); //ToDo: Make this function as it was meant to.
+            ItemMeta meta = item.getItemMeta();
+            meta.setLore(Collections.singletonList(TextComponent.formatText("&6Click To Edit This Category.")));
+            meta.setDisplayName(TextComponent.formatText("&f&l" + key));
+            item.setItemMeta(meta);
+            inventory.setItem(slot, item);
+            slot++;
+        }
 
-            if (!key.contains("levels")) {
-                ItemStack item = new ItemStack(Material.DIAMOND_HELMET);
-                ItemMeta meta = item.getItemMeta();
-                meta.setDisplayName(Arconix.pl().getApi().format().formatText("&6" + key));
-                ArrayList<String> lore = new ArrayList<>();
-                switch (plugin.getConfig().get("settings." + key).getClass().getName()) {
-                    case "java.lang.Boolean":
+        player.openInventory(inventory);
+    }
 
-                        item.setType(Material.LEVER);
-                        boolean bool = (Boolean) plugin.getConfig().get("settings." + key);
+    public void openEditor(Player player) {
+        Inventory inventory = Bukkit.createInventory(null, 54, pluginName + " Settings Editor");
+        FileConfiguration config = instance.getConfig();
 
-                        if (!bool)
-                            lore.add(Arconix.pl().getApi().format().formatText("&c" + false));
-                        else
-                            lore.add(Arconix.pl().getApi().format().formatText("&a" + true));
+        int slot = 0;
+        for (String key : config.getConfigurationSection(cat.get(player)).getKeys(true)) {
+            String fKey = cat.get(player) + "." + key;
+            ItemStack item = new ItemStack(Material.DIAMOND_HELMET);
+            ItemMeta meta = item.getItemMeta();
+            meta.setDisplayName(TextComponent.formatText("&6" + key));
 
                         break;
                     case "java.lang.String":
@@ -126,102 +155,83 @@ public class SettingsManager implements Listener {
                         lore.add(Arconix.pl().getApi().format().formatText("&9" + str));
                         break;
                     case "java.lang.Integer":
-                        item.setType(Material.CLOCK);
+                        item.setType(Material.WATCH);
 
-                        int in = (Integer) plugin.getConfig().get("settings." + key);
-                        lore.add(Arconix.pl().getApi().format().formatText("&5" + in));
-                        break;
-                }
-                if (defs.getConfig().contains(key)) {
-                    String text = defs.getConfig().getString(key);
-                    int index = 0;
-                    while (index < text.length()) {
-                        lore.add(Arconix.pl().getApi().format().formatText("&7" + text.substring(index, Math.min(index + 50, text.length()))));
-                        index += 50;
-                    }
-                }
-                meta.setLore(lore);
-                item.setItemMeta(meta);
+            if (defs.getConfig().contains(fKey)) {
+                String text = defs.getConfig().getString(key);
 
-                i.setItem(num, item);
-                num++;
+                Matcher m = SETTINGS_PATTERN.matcher(text);
+                while (m.find()) {
+                    if (m.end() != text.length() || m.group().length() != 0)
+                        lore.add(TextComponent.formatText("&7" + m.group()));
+                }
             }
+
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+
+            inventory.setItem(slot, item);
+            slot++;
         }
-        p.openInventory(i);
+
+        player.openInventory(inventory);
     }
 
     public void updateSettings() {
-        for (settings s : settings.values()) {
-            if (s.setting.equals("Upgrade-particle-type")) {
-                plugin.getConfig().addDefault("settings." + s.setting, s.option);
-            } else
-                plugin.getConfig().addDefault("settings." + s.setting, s.option);
-        }
+        FileConfiguration config = instance.getConfig();
 
-        ConfigurationSection cs = plugin.getConfig().getConfigurationSection("settings");
-        for (String key : cs.getKeys(true)) {
-            if (!key.contains("levels")) {
-                if (!contains(key)) {
-                    plugin.getConfig().set("settings." + key, null);
-                }
+        for (Setting setting : Setting.values()) {
+            if (config.contains("settings." + setting.oldSetting)) {
+                config.addDefault(setting.setting, instance.getConfig().get("settings." + setting.oldSetting));
+                config.set("settings." + setting.oldSetting, null);
+            } else {
+                config.addDefault(setting.setting, setting.option);
             }
         }
     }
 
-    public static boolean contains(String test) {
-        for (settings c : settings.values()) {
-            if (c.setting.equals(test)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    public enum Setting {
 
-    public enum settings {
+        SOUNDS_ENABLED("Sounds", "Main.Sounds Enabled", true),
 
-        o1("ECO-Icon", "SUNFLOWER"),
-        o2("XP-Icon", "EXPERIENCE_BOTTLE"),
+        o3("Upgrade-with-material", "Main.Upgrade By Smelting Materials", true),
+        UPGRADE_WITH_ECO_ENABLED("Upgrade-with-eco", "Main.Upgrade With Economy", true),
+        UPGRADE_WITH_XP_ENABLED("Upgrade-with-xp", "Main.Upgrade With XP", true),
 
-        o3("Upgrade-with-material", true),
-        o4("Upgrade-with-eco", true),
-        o5("Upgrade-with-xp", true),
+        o6("Turbo-level-multiplier", "Main.Level Cost Multiplier", 50),
 
-        o6("Turbo-level-multiplier", 50),
-        o7("On-upgrade-particles", true),
-
-        o8("sounds", true),
-
-        o83("Helpful-Tips", true),
-        o9("Debug-Mode", false),
-        o102("Remember-furnace-Levels", true),
+        o102("Remember-furnace-Levels", "Main.Remember Furnace Item Levels", true),
 
 
-        o116("Glass-Type-1", 7),
+        o324("Redstone-Deactivate", "Main.Redstone Deactivates Furnaces", true),
 
-        o112("Glass-Type-2", 11),
+        o11("furnace-upgrade-cost", "Main.Furnace Upgrade Cost", "IRON_INGOT"),
+        o12("Custom-recipes", "Main.Use Custom Recipes", true),
+        o13("Ignore-custom-recipes-for-rewards", "Main.No Rewards From Custom Recipes", true),
 
-        o113("Glass-Type-3", 3),
+        UPGRADE_PARTICLE_TYPE("Upgrade-particle-Type", "Main.Upgrade Particle Type", "SPELL_WITCH"),
 
-        o10("Rainbow-Glass", false),
+        o18("Remote-Furnaces", "Main.Access Furnaces Remotely", true),
 
-        o324("Redstone-Deactivate", true),
+        o14("Reward-Icon", "Interfaces.Reward Icon", "GOLDEN_APPLE"),
+        o15("Performance-Icon", "Interfaces.Performance Icon", "REDSTONE"),
+        o16("FuelDuration-Icon", "Interfaces.FuelDuration Icon", "COAL"),
+        ECO_ICON("ECO-Icon", "Interfaces.Economy Icon", "SUNFLOWER"),
+        XP_ICON("XP-Icon", "Interfaces.XP Icon", "EXPERIANCE_BOTTLE"),
+        GLASS_TYPE_1("Glass-Type-1", "Interfaces.Glass Type 1", 7),
+        GLASS_TYPE_2("Glass-Type-2", "Interfaces.Glass Type 2", 11),
+        GLASS_TYPE_3("Glass-Type-3", "Interfaces.Glass Type 3", 3),
+        RAINBOW_GLASS("Rainbow-Glass", "Interfaces.Replace Glass Type 1 With Rainbow Glass", false),
 
-        o11("furnace-upgrade-cost", "IRON_INGOT"),
-        o12("Custom-recipes", true),
-        o13("Ignore-custom-recipes-for-rewards", true),
+        DOWNLOAD_FILES("-", "System.Download Needed Data Files", true),
+        LANGUGE_MODE("-", "System.Language Mode", "en_US"),
+        DEBUG_MODE("Debug-Mode", "System.Debugger Enabled", false);
 
-        o14("Reward-Icon", "GOLDEN_APPLE"),
-        o15("Performance-Icon", "REDSTONE"),
-        o16("FuelDuration-Icon", "COAL"),
+        private final String setting, oldSetting;
+        private final Object option;
 
-        o17("Upgrade-particle-type", "SPELL_WITCH"),
-
-        o18("Remote-Furnaces", true);
-
-        private String setting;
-        private Object option;
-
-        settings(String setting, Object option) {
+        private Setting(String oldSetting, String setting, Object option) {
+            this.oldSetting = oldSetting;
             this.setting = setting;
             this.option = option;
         }

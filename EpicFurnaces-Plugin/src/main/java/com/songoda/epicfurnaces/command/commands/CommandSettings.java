@@ -14,7 +14,7 @@ public class CommandSettings extends AbstractCommand {
 
     @Override
     protected ReturnType runCommand(EpicFurnacesPlugin instance, CommandSender sender, String... args) {
-        SettingsManager.openEditor((Player)sender);
+        instance.getSettingsManager().openSettingsManager((Player)sender);
         return ReturnType.SUCCESS;
     }
 

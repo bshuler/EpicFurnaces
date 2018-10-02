@@ -29,8 +29,15 @@ import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -83,16 +90,20 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
         console.sendMessage(TextComponent.formatText("&a============================="));
         console.sendMessage(TextComponent.formatText("&7EpicFurnaces " + this.getDescription().getVersion() + " by &5Brianna <3&7!"));
         console.sendMessage(TextComponent.formatText("&7Action: &aEnabling&7..."));
-        settingsManager = new SettingsManager();
+        settingsManager = new SettingsManager(this);
         setupConfig();
         dataFile.createNewFile("Loading data file", "EpicFurnaces data file");
         langFile.createNewFile("Loading language file", "EpicFurnaces language file");
         loadDataFile();
 
-        // Locales
+        String langMode = getConfig().getString("System.Language Mode");
         Locale.init(this);
         Locale.saveDefaultLocale("en_US");
-        this.locale = Locale.getLocale(this.getConfig().getString("Locale", "en_US"));
+        this.locale = Locale.getLocale(getConfig().getString("System.Language Mode", langMode));
+
+        if (getConfig().getBoolean("System.Download Needed Data Files")) {
+            this.update();
+        }
 
         loadLevelManager();
 
@@ -246,8 +257,44 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
         saveConfig();
     }
 
+    private void update() {
+        try {
+            URL url = new URL("http://update.songoda.com/index.php?plugin=" + getDescription().getName() + "&version=" + getDescription().getVersion());
+            URLConnection urlConnection = url.openConnection();
+            InputStream is = urlConnection.getInputStream();
+            InputStreamReader isr = new InputStreamReader(is);
+
+            int numCharsRead;
+            char[] charArray = new char[1024];
+            StringBuffer sb = new StringBuffer();
+            while ((numCharsRead = isr.read(charArray)) > 0) {
+                sb.append(charArray, 0, numCharsRead);
+            }
+            String jsonString = sb.toString();
+            JSONObject json = (JSONObject) new JSONParser().parse(jsonString);
+
+            JSONArray files = (JSONArray) json.get("neededFiles");
+            for (Object o : files) {
+                JSONObject file = (JSONObject) o;
+
+                switch ((String) file.get("type")) {
+                    case "locale":
+                        InputStream in = new URL((String) file.get("link")).openStream();
+                        Locale.saveDefaultLocale(in, (String) file.get("name"));
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to update.");
+            //e.printStackTrace();
+        }
+    }
+
     public void reload() {
-        locale.reloadMessages();
+        String langMode = getConfig().getString("System.Language Mode");
+        this.locale = Locale.getLocale(getConfig().getString("System.Language Mode", langMode));
+        this.locale.reloadMessages();
+        this.settingsManager.updateSettings();
         references = new References();
         reloadConfig();
         saveConfig();
@@ -264,7 +311,7 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
             saveResource("Furnace Recipes.yml", false);
         }
 
-        if (getConfig().getBoolean("settings.Custom-recipes")) {
+        if (getConfig().getBoolean("Main.Use Custom Recipes")) {
             ConfigurationSection cs = furnaceRecipeFile.getConfig().getConfigurationSection("Recipes");
             for (String key : cs.getKeys(false)) {
                 Material item = Material.valueOf(key.toUpperCase());
@@ -366,6 +413,11 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
     public PlayerDataManager getPlayerDataManager() {
         return playerDataManager;
     }
+
+    public SettingsManager getSettingsManager() {
+        return settingsManager;
+    }
+
 
     public Locale getLocale() {
         return locale;

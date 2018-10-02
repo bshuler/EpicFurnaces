@@ -26,7 +26,7 @@ public class FurnaceListeners implements Listener {
     public void onCook(FurnaceSmeltEvent e) {
         try {
             Block b = e.getBlock();
-            if ((e.getBlock().isBlockPowered() && instance.getConfig().getBoolean("settings.Redstone-Deactivate")) || e.getResult() == null) {
+            if ((e.getBlock().isBlockPowered() && instance.getConfig().getBoolean("Main.Redstone Deactivates Furnaces")) || e.getResult() == null) {
                 e.setCancelled(true);
                 return;
             }

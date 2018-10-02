@@ -19,7 +19,7 @@ public class CommandRemote extends AbstractCommand {
     @Override
     protected ReturnType runCommand(EpicFurnacesPlugin instance, CommandSender sender, String... args) {
 
-        if (!instance.getConfig().getBoolean("settings.Remote-Furnaces") || !sender.hasPermission("EpicFurnaces.Remote")) {
+        if (!instance.getConfig().getBoolean("Main.Access Furnaces Remotely") || !sender.hasPermission("EpicFurnaces.Remote")) {
             sender.sendMessage(instance.references.getPrefix() + instance.getLocale().getMessage("event.general.nopermission"));
             return ReturnType.FAILURE;
         }

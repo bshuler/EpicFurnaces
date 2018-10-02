@@ -62,7 +62,7 @@ public class EFurnace implements Furnace {
 
             Level nextLevel = instance.getLevelManager().getHighestLevel().getLevel() > level.getLevel() ? instance.getLevelManager().getLevel(level.getLevel() + 1) : null;
 
-            int multi = instance.getConfig().getInt("settings.Turbo-level-multiplier");
+            int multi = instance.getConfig().getInt("Main.Level Cost Multiplier");
 
             int needed = (multi * level.getLevel()) - tolevel;
 
@@ -80,8 +80,8 @@ public class EFurnace implements Furnace {
                 lore.add(instance.getLocale().getMessage("interface.furnace.level", nextLevel.getLevel()));
                 lore.addAll(nextLevel.getDescription());
 
-                if (instance.getConfig().getBoolean("settings.Upgrade-with-material")) {
-                    lore.add(instance.getLocale().getMessage("interface.furnace.tolevel", needed, Methods.cleanString(instance.getConfig().getString("settings.furnace-upgrade-cost"))));
+                if (instance.getConfig().getBoolean("Main.Upgrade By Smelting Materials")) {
+                    lore.add(instance.getLocale().getMessage("interface.furnace.tolevel", needed, Methods.cleanString(instance.getConfig().getString("Main.Furnace Upgrade Cost"))));
                 }
             }
 
@@ -97,7 +97,7 @@ public class EFurnace implements Furnace {
             }
 
 
-            ItemStack item2 = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.Performance-Icon")), 1);
+            ItemStack item2 = new ItemStack(Material.valueOf(instance.getConfig().getString("Interfaces.Performance Icon")), 1);
             ItemMeta itemmeta2 = item2.getItemMeta();
             itemmeta2.setDisplayName(instance.getLocale().getMessage("interface.furnace.performancetitle")); //greyed out until available
             ArrayList<String> lore2 = new ArrayList<>();
@@ -110,7 +110,7 @@ public class EFurnace implements Furnace {
             itemmeta2.setLore(lore2);
             item2.setItemMeta(itemmeta2);
 
-            ItemStack item3 = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.Reward-Icon")), 1);
+            ItemStack item3 = new ItemStack(Material.valueOf(instance.getConfig().getString("Interfaces.Reward Icon")), 1);
             ItemMeta itemmeta3 = item3.getItemMeta();
             itemmeta3.setDisplayName(instance.getLocale().getMessage("interface.furnace.rewardtitle"));
             ArrayList<String> lore3 = new ArrayList<>();
@@ -124,7 +124,7 @@ public class EFurnace implements Furnace {
             item3.setItemMeta(itemmeta3);
 
 
-            ItemStack item4 = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.FuelDuration-Icon")), 1);
+            ItemStack item4 = new ItemStack(Material.valueOf(instance.getConfig().getString("Interfaces.FuelDuration Icon")), 1);
             ItemMeta itemmeta4 = item4.getItemMeta();
             itemmeta4.setDisplayName(instance.getLocale().getMessage("interface.furnace.fueldurationtitle"));
             ArrayList<String> lore4 = new ArrayList<>();
@@ -137,7 +137,7 @@ public class EFurnace implements Furnace {
             itemmeta4.setLore(lore4);
             item4.setItemMeta(itemmeta4);
 
-            ItemStack itemXP = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.XP-Icon")), 1);
+            ItemStack itemXP = new ItemStack(Material.valueOf(instance.getConfig().getString("Interfaces.XP Icon")), 1);
             ItemMeta itemmetaXP = itemXP.getItemMeta();
             itemmetaXP.setDisplayName(instance.getLocale().getMessage("interface.furnace.upgradewithxp"));
             ArrayList<String> loreXP = new ArrayList<>();
@@ -148,7 +148,7 @@ public class EFurnace implements Furnace {
             itemmetaXP.setLore(loreXP);
             itemXP.setItemMeta(itemmetaXP);
 
-            ItemStack itemECO = new ItemStack(Material.valueOf(instance.getConfig().getString("settings.ECO-Icon")), 1);
+            ItemStack itemECO = new ItemStack(Material.valueOf(instance.getConfig().getString("Interfaces.Economy Icon")), 1);
             ItemMeta itemmetaECO = itemECO.getItemMeta();
             itemmetaECO.setDisplayName(instance.getLocale().getMessage("interface.furnace.upgradewitheconomy"));
             ArrayList<String> loreECO = new ArrayList<>();
@@ -219,16 +219,16 @@ public class EFurnace implements Furnace {
             hookmeta.setLore(lorehook);
             hook.setItemMeta(hookmeta);
 
-            if (instance.getConfig().getBoolean("settings.Remote-Furnaces") && p.hasPermission("EpicFurnaces.Remote")) {
+            if (instance.getConfig().getBoolean("Main.Access Furnaces Remotely") && p.hasPermission("EpicFurnaces.Remote")) {
                 i.setItem(4, hook);
             }
 
             i.setItem(13, item);
 
-            if (instance.getConfig().getBoolean("settings.Upgrade-with-xp") && p.hasPermission("EpicFurnaces.Upgrade.XP")) {
+            if (instance.getConfig().getBoolean("Main.Upgrade With XP") && p.hasPermission("EpicFurnaces.Upgrade.XP")) {
                 i.setItem(11, itemXP);
             }
-            if (instance.getConfig().getBoolean("settings.Upgrade-with-eco") && p.hasPermission("EpicFurnaces.Upgrade.ECO")) {
+            if (instance.getConfig().getBoolean("Main.Upgrade With Economy") && p.hasPermission("EpicFurnaces.Upgrade.ECO")) {
                 i.setItem(15, itemECO);
             }
 
@@ -247,7 +247,7 @@ public class EFurnace implements Furnace {
             uses++;
             tolevel++;
 
-            int multi = instance.getConfig().getInt("settings.Turbo-level-multiplier");
+            int multi = instance.getConfig().getInt("Main.Level Cost Multiplier");
 
             if (level.getReward() == null) return;
 
@@ -266,7 +266,7 @@ public class EFurnace implements Furnace {
 
             int needed = ((multi * level.getLevel()) - tolevel) - 1;
 
-            if (instance.getConfig().getBoolean("settings.Upgrade-with-material")
+            if (instance.getConfig().getBoolean("Main.Upgrade By Smelting Materials")
                     && needed <= 0
                     && instance.getConfig().contains("settings.levels.Level-" + (level.getLevel() + 1))) {
                 tolevel = 0;
@@ -281,7 +281,7 @@ public class EFurnace implements Furnace {
             double rand = Math.random() * 100;
             if (rand >= num
                     || e.getResult().equals(Material.SPONGE)
-                    || instance.getConfig().getBoolean("settings.Ignore-custom-recipes-for-rewards")
+                    || instance.getConfig().getBoolean("Main.No Rewards From Custom Recipes")
                     && instance.getFurnaceRecipeFile().getConfig().contains("Recipes." + i.getSmelting().getType().toString())) {
                 return;
             }
@@ -353,8 +353,8 @@ public class EFurnace implements Furnace {
             }
             Location loc = location.clone().add(.5, .5, .5);
 
-            player.getWorld().spawnParticle(org.bukkit.Particle.valueOf(instance.getConfig().getString("settings.Upgrade-particle-type")), loc, 200, .5, .5, .5);
-            if (instance.getConfig().getBoolean("settings.sounds")) {
+            player.getWorld().spawnParticle(org.bukkit.Particle.valueOf(instance.getConfig().getString("Main.Upgrade Particle Type")), loc, 200, .5, .5, .5);
+            if (instance.getConfig().getBoolean("Main.Use Sounds")) {
                 if (instance.getLevelManager().getHighestLevel() == level) {
                     player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.6F, 15.0F);
                 } else {
