@@ -220,7 +220,7 @@ public class SettingsManager implements Listener {
         o15("Performance-Icon", "Interfaces.Performance Icon", "REDSTONE"),
         o16("FuelDuration-Icon", "Interfaces.FuelDuration Icon", "COAL"),
         ECO_ICON("ECO-Icon", "Interfaces.Economy Icon", "SUNFLOWER"),
-        XP_ICON("XP-Icon", "Interfaces.XP Icon", "EXPERIANCE_BOTTLE"),
+        XP_ICON("XP-Icon", "Interfaces.XP Icon", "EXPERIENCE_BOTTLE"),
         GLASS_TYPE_1("Glass-Type-1", "Interfaces.Glass Type 1", 7),
         GLASS_TYPE_2("Glass-Type-2", "Interfaces.Glass Type 2", 11),
         GLASS_TYPE_3("Glass-Type-3", "Interfaces.Glass Type 3", 3),
