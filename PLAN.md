@@ -105,33 +105,61 @@ plugin already achieves with a single build:
 | Spigot | Expected-compatible | Only stable Bukkit/Spigot API surface is used, no Paper-only calls currently exist |
 | CraftBukkit | Expected-compatible (same reasoning as Spigot) | Not a realistic deployment target in practice |
 
-### 4. Backward version walk
+### 4. Backward version walk — DONE
 
 Paper publishes `paper-api` for older MC versions using the classic
-`X.Y.Z-R0.1-SNAPSHOT` Maven coordinate (still resolvable from
-`repo.papermc.io/repository/maven-public/` per its `maven-metadata.xml`,
-confirmed present for 1.18.2 through 1.20.x at time of writing). Plan: build
-against the latest (26.2) baseline first since it's the one that matters
-most; then, time permitting, attempt separate module/sourceSet builds
-pinned to older `paper-api` coordinates for 1.21.x, 1.20.1, 1.19.4, 1.18.2,
-recording actual pass/fail per version rather than assuming.
+`X.Y.Z-R0.1-SNAPSHOT` Maven coordinate, still resolvable from
+`repo.papermc.io/repository/maven-public/` per its `maven-metadata.xml`
+(confirmed live: `1.18.2-R0.1-SNAPSHOT`, `1.19.4-R0.1-SNAPSHOT`,
+`1.20.1-R0.1-SNAPSHOT`, `1.21.11-R0.1-SNAPSHOT` all present — `1.21.11` used
+as the "1.21.x" representative since it's the newest release in that
+version group per `fill.papermc.io/v3/projects/paper`).
+
+The plugin has no per-version code branching (a single source set targets
+whichever `paper-api` is on the compile classpath), so each older target was
+tested by overriding the `paperApiVersion` Gradle property on the command
+line — e.g. `./gradlew clean shadowJar -PpaperApiVersion=1.18.2-R0.1-SNAPSHOT`
+— rather than maintaining separate modules/source sets. All four builds
+succeeded with the same Java 25 toolchain (the older `-R0.1-SNAPSHOT`
+coordinates are plain Maven POMs with no Gradle module metadata, so they
+carry no JVM-version constraint of their own) and every resulting jar was
+verified non-empty (54 files, matching the 26.2 build). This is a
+genuinely-tested result, not an assumption from "it's just Bukkit API so it
+must work."
+
+The committed `gradle.properties`/`build.gradle.kts` still default to the
+latest (26.2) coordinate — that's the plugin's actual shipped target. The
+override mechanism above is how a maintainer would reproduce/re-verify any
+older-version build without needing separate project files.
 
 | Target | api-version needed | Status |
 |---|---|---|
-| 26.2 (latest) | `26.2` | **Built.** Java 25 toolchain required by `paper-api:26.2.build.111-stable`'s Gradle module metadata (see Java version note above); Gradle build green, jar verified non-empty. |
-| 1.21.x | 1.21 | pending |
-| 1.20.1 | 1.20 | pending |
-| 1.19.4 | 1.19 | pending |
-| 1.18.2 | 1.18 | pending |
+| 26.2 (latest) | `26.2` | **Built.** Default target. Java 25 toolchain required by `paper-api:26.2.build.111-stable`'s Gradle module metadata. Jar: 54 files, verified non-empty. |
+| 1.21.11 (1.21.x) | `1.21` | **Built.** `-PpaperApiVersion=1.21.11-R0.1-SNAPSHOT`. Jar: 54 files, verified non-empty. |
+| 1.20.1 | `1.20` | **Built.** `-PpaperApiVersion=1.20.1-R0.1-SNAPSHOT`. Jar: 54 files, verified non-empty. |
+| 1.19.4 | `1.19` | **Built.** `-PpaperApiVersion=1.19.4-R0.1-SNAPSHOT`. Jar: 54 files, verified non-empty. |
+| 1.18.2 | `1.18` | **Built.** `-PpaperApiVersion=1.18.2-R0.1-SNAPSHOT`. Jar: 54 files, verified non-empty. |
+
+Note: `api-version` in the shipped `plugin.yml` is fixed at `"26.2"` (the
+actual shipped target's compatibility gate); it is **not** swapped per
+build in this exercise since these older-version builds were a
+compile/package verification pass, not four separate release artifacts. A
+maintainer targeting an older server long-term would want to also drop
+`api-version` to that version's value in a locally-built jar.
 
 ### 5. Verification
 
-- [ ] `unzip -l build/libs/*.jar` — confirm plugin classes actually present
-      (not a green-but-empty jar).
+- [x] `unzip -l build/libs/*.jar` — confirmed plugin classes actually
+      present (not a green-but-empty jar) for the default 26.2 build and
+      all four milestone-4 backward-version builds; 54 files each time
+      (35 `.class` files, `plugin.yml`, `config.yml`, `lang.yml`,
+      `en_US.lang`, `SettingDefinitions.yml`, `Furnace Recipes.yml`,
+      `META-INF/MANIFEST.MF`, directory entries).
 - [ ] Optional: download Paper server jar for the target version into the
       session scratchpad only (never committed), `java -jar paper.jar
       --nogui` smoke boot with the plugin dropped in `plugins/`, confirm it
-      loads without exceptions in the console log.
+      loads without exceptions in the console log. Not attempted this pass
+      (optional per the task brief).
 
 ## Open problems / honest blockers
 
@@ -143,8 +171,16 @@ recording actual pass/fail per version rather than assuming.
   it; not attempted here as it's effectively a per-plugin integration
   project of its own.
 - Folia compatibility is unverified (see matrix above).
-- Backward-version builds (milestone 4) not yet attempted at the time this
-  file was last edited — see the table above for live status.
+- No Paper server smoke-boot was performed (optional per the task brief) —
+  verification here is build-green + non-empty-jar only, not a runtime
+  `onEnable()` check. A maintainer wanting that assurance should download a
+  Paper server jar for the target version into a scratch directory (never
+  commit it) and boot with the plugin in `plugins/`.
+- Java 25 is now required to build the latest (26.2) target, a step up from
+  the Java 21 originally planned; the only installed system JDK (Temurin 21)
+  was left untouched — the toolchain is auto-provisioned by
+  `foojay-resolver-convention` into Gradle's own cache. Whoever builds this
+  next should expect a one-time JDK 25 download on first build.
 
 ## Repository / git notes
 
