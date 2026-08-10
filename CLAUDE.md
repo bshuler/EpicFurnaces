@@ -123,8 +123,12 @@ See `PLAN.md` for the version matrix and per-version build status.
 ./gradlew shadowJar       # same, explicit task name
 ```
 
-- Gradle 9.x, Java 21 toolchain (auto-provisioned via the foojay resolver —
-  do not install a system JDK for this).
+- Gradle 9.x, Java 25 toolchain (auto-provisioned via the foojay resolver —
+  do not install a system JDK for this). Java 25 is required because the
+  latest `paper-api`'s Gradle module metadata declares it as a minimum; this
+  was discovered by a failed build against a Java 21 toolchain, not assumed
+  in advance. Older-version builds (see `PLAN.md` milestone 4) may use an
+  older toolchain if their corresponding `paper-api` allows it.
 - Single consolidated module (the old broken two-module Maven layout
   — `EpicFurnaces-API` + `EpicFurnaces-Plugin` sharing one `pom.xml` with no
   `<modules>` declared — is replaced by one Gradle project; the API package

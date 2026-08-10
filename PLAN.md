@@ -2,10 +2,22 @@
 
 ## Goal
 
-Get this plugin building and running on the latest Paper API (Java 21), then
-walk backward through older Minecraft versions as far as practical, and give
-an honest answer on cross-platform (mod-loader) support. See `CLAUDE.md` for
+Get this plugin building and running on the latest Paper API, then walk
+backward through older Minecraft versions as far as practical, and give an
+honest answer on cross-platform (mod-loader) support. See `CLAUDE.md` for
 architecture and provenance.
+
+**Java version note:** the plan originally assumed Java 21 throughout. Live
+build against the latest `paper-api` (26.2.build.111-stable) showed its
+Gradle module metadata requires JVM 25 (`Dependency resolution is looking for
+a library compatible with JVM runtime version 21, but ... is only compatible
+with JVM runtime version 25 or newer`) — Minecraft/Paper bumped their minimum
+Java requirement again since the Java 21 assumption was made. The root
+`build.gradle.kts` toolchain is now Java 25, auto-provisioned by
+`foojay-resolver-convention` (Gradle's own toolchain cache, not a system/
+Homebrew JDK — the only installed system JDK, Temurin 21, is untouched).
+Older-version builds in milestone 4 may be able to target Java 21 again if
+their corresponding `paper-api` still requires it; recorded per-row below.
 
 ## Milestones
 
@@ -20,22 +32,38 @@ architecture and provenance.
 - [x] Renamed local branch `master` → `main`, pushed, set as GitHub default
       branch. `master` and `Legacy` left intact (not deleted).
 
-### 2. Modern build (latest Paper API, Java 21) — IN PROGRESS
+### 2. Modern build (latest Paper API) — DONE
 
-- [ ] Replace the broken two-module Maven layout (`pom.xml` with no
+- [x] Replaced the broken two-module Maven layout (`pom.xml` with no
       `<modules>` despite `EpicFurnaces-API`/`EpicFurnaces-Plugin` being
       separate trees) with one consolidated Gradle 9.x project.
-- [ ] `paper-api` at the latest resolvable version (queried live from
+- [x] `paper-api` at the latest resolvable version (queried live from
       `fill.papermc.io`/`repo.papermc.io` maven-metadata — **26.2** /
       `26.2.build.111-stable` at time of writing; do not hardcode this
       without re-checking, MC is calendar-versioned now).
-- [ ] Java 21 toolchain, `com.gradleup.shadow`, `foojay-resolver-convention`.
-- [ ] Remove Arconix/MassiveStats/org.json.simple/Nashorn/legacy
+- [x] Java 25 toolchain (bumped up from the originally-planned 21 — see the
+      Java version note above), `com.gradleup.shadow`,
+      `foojay-resolver-convention`.
+- [x] Removed Arconix/MassiveStats/org.json.simple/Nashorn/legacy
       `FurnaceRecipe` ctor/NMS version-sniffing (see `CLAUDE.md` table).
-- [ ] Relocate the 9 protection-plugin hook files to `legacy-hooks/`
-      (excluded from compilation), strip their registration from
+- [x] Relocated the 9 protection-plugin hook files to `legacy-hooks/`
+      (excluded from compilation), stripped their registration from
       `EpicFurnacesPlugin.onEnable()`.
-- [ ] Green build, verified jar contents (`unzip -l`), commit + push.
+- [x] Fixed two more compile-time API breaks found only by actually
+      building (not anticipated by static inspection): `VaultAPI:1.7`
+      transitively pulls `org.bukkit:bukkit:1.13.1-R0.1-SNAPSHOT`, whose
+      Gradle "bukkit" capability conflicts with the one `paper-api` provides
+      — excluded that transitive dependency in `build.gradle.kts`.
+      `Inventory.getTitle()` no longer exists on modern Bukkit
+      (`SettingsManager.onInventoryClick`) — switched to
+      `InventoryClickEvent.getView().getTitle()`.
+- [x] Bumped `plugin.yml`'s `api-version` from the original `1.13` to
+      `"26.2"` to match the actual build target (Paper's calendar-versioned
+      scheme; confirmed via `fill.papermc.io/v3/projects/paper` that `26.2`
+      is a real version group, newer than the last `1.21.x` release).
+- [x] Green build (`./gradlew build`), verified jar contents (`unzip -l`) —
+      54 files, all expected `.class` files and resources present, no
+      empty/truncated jar. Committed + pushed.
 
 ### 3. Cross-platform assessment
 
@@ -90,7 +118,7 @@ recording actual pass/fail per version rather than assuming.
 
 | Target | api-version needed | Status |
 |---|---|---|
-| 26.2 (latest) | TBD after build | pending |
+| 26.2 (latest) | `26.2` | **Built.** Java 25 toolchain required by `paper-api:26.2.build.111-stable`'s Gradle module metadata (see Java version note above); Gradle build green, jar verified non-empty. |
 | 1.21.x | 1.21 | pending |
 | 1.20.1 | 1.20 | pending |
 | 1.19.4 | 1.19 | pending |

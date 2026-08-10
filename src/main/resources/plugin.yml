@@ -1,0 +1,12 @@
+name: EpicFurnaces
+description: EpicFurnaces
+version: ${version}
+main: com.songoda.epicfurnaces.EpicFurnacesPlugin
+author: songoda
+api-version: "26.2"
+commands:
+  EpicFurnaces:
+    description: I have no idea.
+    default: true
+    aliases: [ef]
+    usage: /<command> [reload]
