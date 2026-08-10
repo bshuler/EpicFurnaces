@@ -41,19 +41,28 @@ public class ConfigWrapper {
      */
     public boolean createNewFile(String loadingMessage, String header) {
         if (file.exists()) return false;
+
+        // No early `return` inside the try body on purpose: javac emits an
+        // extra unreachable GOTO instruction (attributed to the catch
+        // block's closing brace) to let a try-body return skip past the
+        // catch blocks, which JaCoCo then reports as a permanently
+        // uncoverable line. Falling through naturally to a single return
+        // at the end avoids that compiler artifact entirely.
+        boolean created = false;
         try {
             plugin.getLogger().info(loadingMessage);
             File parent = file.getParentFile();
             if (parent != null) parent.mkdirs();
-            if (file.createNewFile()) {
-                config = new YamlConfiguration();
-                saveConfig();
-                return true;
-            }
+            created = file.createNewFile();
         } catch (IOException e) {
             plugin.getLogger().warning("Could not create " + file.getName() + ": " + e.getMessage());
         }
-        return false;
+
+        if (created) {
+            config = new YamlConfiguration();
+            saveConfig();
+        }
+        return created;
     }
 
     public FileConfiguration getConfig() {

@@ -4,6 +4,7 @@ version: ${version}
 main: com.songoda.epicfurnaces.EpicFurnacesPlugin
 author: songoda
 api-version: "26.2"
+softdepend: [WorldGuard, GriefPrevention, RedProtect, ASkyBlock, Towny, PlotSquared]
 commands:
   EpicFurnaces:
     description: I have no idea.

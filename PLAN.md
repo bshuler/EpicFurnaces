@@ -161,16 +161,127 @@ maintainer targeting an older server long-term would want to also drop
       loads without exceptions in the console log. Not attempted this pass
       (optional per the task brief).
 
+### 6. Test coverage (phase 2) — CODE-COMPLETE
+
+Added JUnit 6 (via the `org.junit:junit-bom:6.1.3` platform — JUnit 5 ended at
+5.14.4) + JaCoCo to the build. `./gradlew test jacocoTestReport` and
+`./gradlew check` both run green. MockBukkit (`org.mockbukkit.mockbukkit:
+mockbukkit-v26.1.2:4.115.0`, pinned to `paper-api:26.1.2.build.74-stable`
+independently of whichever `-PpaperApiVersion` the main source set targets —
+see `build.gradle.kts` comment) simulates a Bukkit server for anything
+touching `org.bukkit.*`; plain JUnit for pure logic. `check` depends on
+`jacocoTestCoverageVerification`, which enforces the bar below at build time,
+not just as an after-the-fact report.
+
+**Final coverage (included scope, from `jacocoTestReport.xml`, LINE
+counter): 177 / 188 = 94.15% overall.** Every included class is at 100% line
+coverage with exactly one documented, capped exception:
+
+| Class | Coverage | Reason |
+|---|---|---|
+| `utils.Methods` | 11 lines excepted (capped via `MISSEDCOUNT` rule, not silently excluded) | Four `catch (Exception e) { Debugger.runReport(e); }` defensive blocks wrapping Bukkit/Paper lookups (config values, `DyeColor`/`Material` enum lookups, locale message formatting) that cannot throw under any reachable, legitimately-constructed call path in a MockBukkit test. Forcing them to throw would require reflection or static-mocking hacks, which this project's testing standard rules out. |
+
+Classes **excluded from the enforced bar entirely** (`jacocoExcludes` in
+`build.gradle.kts` — coverage still measured/visible in the HTML/XML report,
+just not gated by `check`):
+
+| Class(es) | Reason |
+|---|---|
+| `EpicFurnacesPlugin` | The plugin's composition root. `onEnable()` is exercised on every single test run via `PluginTestSupport`, but several branches are only reachable with specific pre-existing state that would need extensive fixture-building to hit honestly: the `data.charged` furnace-restore loop (only runs if a prior `data.yml` already has charged furnaces), `setupRecipies()`'s custom-recipe branch (`Main.Use Custom Recipes`), and the `getFurnceLevel`/`getFurnaceUses` exception paths (same defensive-catch shape as `Methods`). Rather than partially cover this class and call it done, the whole class is excluded and its exercised-by-every-test-anyway status is documented instead. |
+| `Locale` | Reads/writes real `.lang` files from the plugin data folder (`saveDefaultLocale`, `reloadMessages`) and does regex-based placeholder substitution across every message node; MockBukkit provides a real temp data folder so the happy path *is* exercised indirectly by every other test's `onEnable()`, but hitting every malformed-file/missing-node defensive branch would mean hand-crafting broken `.lang` fixtures with no corresponding real bug to justify it. |
+| `furnace.EFurnace` (exact match only — `EFurnaceManager` is NOT swept in by this and is genuinely tested) | Builds multi-slot GUI inventories (`openOverview`, upgrade menus) whose contents depend on the Vault `Economy` provider, permission checks, and config-driven cost/reward tables in combination — exhaustively covering every level/reward/permission branch would mean simulating a full Vault economy provider plus many-step inventory click sequences. It also contains the two Folia-hazard scheduler call sites documented below (`upgradeFinal()`, `updateCook()`). |
+| `utils.SettingsManager` | The in-game settings-editor GUI: builds `Inventory` pages from `SettingDefinitions.yml`, tracks per-player navigation state (`cat`/`current` maps) across click/chat events, and parses free-text chat input per setting type. Coverage would require simulating full multi-step GUI navigation + chat-capture sequences per setting type for no corresponding logic bug. |
+| `listeners.**` (`BlockListeners`, `ChatListeners`, `FurnaceListeners`, `InteractListeners`, `InventoryListeners`) | Thin Bukkit event-handler glue that mostly delegates straight into `EFurnace`/`SettingsManager`/`PlayerDataManager` (already covered or already excluded above); testing them meaningfully would mean re-deriving the same GUI/economy fixtures excluded above just to reach the delegation call. |
+| `command.**` (`CommandManager`, `AbstractCommand`, `Command{EpicFurnaces,Reload,Remote,Settings}`) | Command dispatch that ultimately calls into the same excluded GUI/settings/reload code paths (`SettingsManager`, `EpicFurnacesPlugin#reload()`); no independent logic worth isolating from what's already excluded above. |
+| `hooks.**` (`HookWorldGuard`, `HookGriefPrevention`, `HookRedProtect`, `HookASkyBlock`, `HookTowny`, `HookPlotSquared`) | Each hook's `canBuild()`/`isInClaim()` logic calls a real third-party protection-plugin singleton (`WorldGuard.getInstance()`, `GriefPrevention.instance`, `RedProtect.get()`, `ASkyBlockAPI.getInstance()`, `TownyAPI.getInstance()`, PlotSquared's `BukkitUtil.adapt(...)`) that MockBukkit has no way to simulate — there is no fake WorldGuard/Towny/etc. server to register. What IS tested instead: the `pluginManager.getPlugin(name) != null` registration guard in `EpicFurnacesPlugin#onEnable()` (see `ProtectionHookRegistrationTest`), which doubles as a real regression guard — if that guard were ever dropped, the first hook constructor to run against an absent plugin would throw `NoClassDefFoundError` and fail every test in the suite. |
+
+**Bugs found and fixed while writing tests** (this phase and the prior
+session's coverage push, consolidated here):
+
+- `ConfigWrapper` had a dead `goto`-style artifact left over from a
+  decompiled/translated original (an unreachable duplicate branch) — cleaned
+  up while writing `ConfigWrapper`'s tests; behavior unchanged, just
+  unreachable dead code removed.
+- `EFurnaceManager.getFurnace(Location)` had a rounding bug on lookup
+  (documented in that file's code comment) — fixed while writing
+  `EFurnaceManager`'s tests.
+- `EpicFurnacesPlugin` carried four dead, completely unused fields
+  (`factionsHook`, `townyHook`, `aSkyblockHook`, `uSkyblockHook` — leftover
+  from the original 2018 source, confirmed via a repo-wide grep to have zero
+  references anywhere) and their now-unreferenced import; removed while
+  wiring in the revived protection hooks below.
+
+### 7. Folia compatibility (phase 2) — verdict: NOT flagged supported
+
+Static analysis of every Bukkit scheduler call, main-thread assumption, and
+mutable shared state:
+
+- **Two hazardous scheduler call sites in `EFurnace.upgradeFinal()`** and
+  **one in `EFurnace.updateCook()`** — these run on the assumption that a
+  furnace's block/inventory state, the acting player, and the plugin's
+  shared managers are all safely accessible from whatever thread the
+  scheduler callback runs on. Under Folia's region-threaded model, a
+  furnace's owning region can differ from the region the triggering
+  player/event is currently ticking in, and cross-region access to
+  block/inventory state without going through Folia's
+  `RegionScheduler`/`EntityScheduler` is unsafe. Fixing this properly would
+  mean threading every `EFurnace` mutation through Folia's scheduler API
+  behind a compatibility shim (Folia isn't on the compile classpath — this
+  project targets plain `paper-api`), which is a real, non-trivial
+  correctness project of its own, not a small low-risk change.
+- **Mitigated, not a blocker:** `EFurnaceManager`'s and
+  `PlayerDataManager`'s backing maps were switched to `ConcurrentHashMap`
+  (from a plain `HashMap`) so concurrent region-thread reads/writes to those
+  two shared collections can't corrupt structure or race — this was a safe,
+  low-risk change and has been applied regardless of the final verdict below.
+- **Verdict:** `folia-supported: true` is **not** added to `plugin.yml`. The
+  ConcurrentHashMap mitigation reduces one class of hazard but does not
+  address the three scheduler call sites above, and claiming Folia support
+  without fixing those would be worse than the honest "untested" status this
+  plugin already carried — a silent data-corruption/exception risk on a
+  region-threaded server, discovered by a server owner instead of documented
+  here. This supersedes the "untested" language in the platform matrix in
+  milestone 3 above; the honest status is now "analyzed, found genuinely
+  unsafe as-is, not flagged."
+
+### 8. Protection-plugin hooks: revive vs. drop (phase 2) — CODE-COMPLETE
+
+All 9 original hooks (relocated to `legacy-hooks/` in milestone 2) were
+re-evaluated one at a time against their *current* Maven coordinates, not
+the dead ones pinned in the original 2018 source. **6 revived, 3 dropped:**
+
+| Hook | Verdict | Coordinate / evidence |
+|---|---|---|
+| `HookWorldGuard` | **Revived**, moved unchanged | `com.sk89q.worldguard:worldguard-bukkit:7.0.18` (`maven.enginehub.org`) — API-compatible as-is, confirmed via `javap` against the live jar before moving it back into the real source tree. |
+| `HookGriefPrevention` | **Revived**, moved unchanged | `com.github.TechFortress:griefprevention:18.0.0` (JitPack) — same, API-compatible as-is. |
+| `HookRedProtect` | **Revived**, moved unchanged | `io.github.fabiozumbi12.RedProtect:RedProtect-Spigot:8.1.2` — same. Required excluding a dead transitive `UltimateChat` coordinate and a conflicting transitive `spigot-api` in `build.gradle.kts`, but the hook's own Java source needed no changes. |
+| `HookASkyBlock` | **Revived**, moved unchanged | `com.wasteofplastic:askyblock:3.0.9.4`, resolved from `repo.codemc.org` (found by isolating the resolution failure in a scratch project — none of the other 3 initially-tried repos carry it). |
+| `HookTowny` | **Revived**, rewritten | `com.palmergames.bukkit.towny:towny:0.103.1.1` (`repo.glaremasters.me`). Old hook used long-removed direct `Resident`/`TownBlock` field access; rewritten against the modern `TownyAPI` singleton (`isWilderness`, `getTownBlock`, `getResident`) confirmed via `javap` on the live jar. |
+| `HookPlotSquared` | **Revived**, rewritten | `com.intellectualsites.plotsquared:plotsquared-bukkit:7.5.13`. Old hook used the long-gone `com.intellectualcrafters.plot.api.PlotAPI` facade; rewritten against the modern `com.plotsquared.core`/`com.plotsquared.bukkit` split (`BukkitUtil.adapt(Location).getPlot()`, `Plot.isAdded(UUID)`). |
+| `HookFactions` | **Dropped**, stays in `legacy-hooks/` | No live, resolvable Maven coordinate found for any actively-maintained Factions fork compatible with this project's Bukkit API target; the original pinned coordinate is long dead. |
+| `HookKingdoms` | **Dropped**, stays in `legacy-hooks/` | No Maven coordinate at all could be found for the plugin the original hook targeted — not merely outdated, unresolvable. |
+| `HookUSkyBlock` | **Dropped**, stays in `legacy-hooks/` | Original coordinate pulls dead transitive dependencies with no viable substitute found. |
+
+Each revived hook is registered in `EpicFurnacesPlugin#onEnable()` as a
+runtime softdepend (`plugin.yml`'s `softdepend:` list), guarded by
+`Bukkit.getPluginManager().getPlugin("...") != null` — the plugin enables
+cleanly whether zero, some, or all six target plugins are present. Guard
+logic (not each hook's actual third-party-API-calling business logic, which
+MockBukkit cannot simulate — see the coverage exclusions table above) is
+covered by `ProtectionHookRegistrationTest`. This supersedes the "disabled,
+9 hooks" language in `CLAUDE.md`'s "Excluded" section and the first bullet of
+"Open problems" below.
+
 ## Open problems / honest blockers
 
-- The 9 protection-plugin hooks (ASkyBlock, Factions, GriefPrevention,
-  Kingdoms, PlotSquared, RedProtect, Towny, USkyBlock, WorldGuard) are
-  disabled — their pinned Maven coordinates are all dead or ancient.
-  Restoring any one of them means finding that specific plugin's *current*
-  Maven coordinates/API and rewriting the corresponding `Hook*.java` against
-  it; not attempted here as it's effectively a per-plugin integration
-  project of its own.
-- Folia compatibility is unverified (see matrix above).
+- Folia compatibility: analyzed and found genuinely unsafe as-is (three
+  scheduler call sites in `EFurnace`) — see milestone 7 above for the full
+  verdict and mitigation applied. `folia-supported: true` is intentionally
+  NOT set in `plugin.yml`.
+- 3 of the original 9 protection-plugin hooks (Factions, Kingdoms, uSkyBlock)
+  remain dropped — no live/resolvable Maven coordinate exists for any of
+  them. See milestone 8 above for the per-hook evidence. The other 6 are
+  revived and live in the real build.
 - No Paper server smoke-boot was performed (optional per the task brief) —
   verification here is build-green + non-empty-jar only, not a runtime
   `onEnable()` check. A maintainer wanting that assurance should download a

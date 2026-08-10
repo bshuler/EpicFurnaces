@@ -78,27 +78,50 @@ Single Bukkit `JavaPlugin` (`EpicFurnacesPlugin`), event-driven:
 | 2-arg `FurnaceRecipe(ItemStack, Material)` | Removed from modern Bukkit API | `NamespacedKey`-based `FurnaceRecipe` constructor |
 | NMS-package version-sniffing in `checkVersion()` | Obsolete/breakable string-splitting on `org.bukkit.craftbukkit.vX_Y_RZ`; modern Paper is Mojang-mapped, no such package | Removed; `plugin.yml`'s `api-version` is the real compatibility gate |
 
-### Excluded: the 9 protection-plugin hooks
+### Protection-plugin hooks: 6 revived, 3 dropped
 
-`hooks/Hook{ASkyBlock,Factions,GriefPrevention,Kingdoms,PlotSquared,
-RedProtect,Towny,USkyBlock,WorldGuard}.java` each integrate with a specific
-land-claim plugin at long-dead or version-incompatible Maven coordinates
-(e.g. `WorldGuard 6.1.1-SNAPSHOT`, `Towny 0.92.0.0`, `PlotSquared 18.05.01`).
-None of those coordinates resolve today. These files are **relocated to
-`legacy-hooks/` (not compiled, not deleted)** and their registration calls
-removed from `EpicFurnacesPlugin.onEnable()`. This is a real, intentional
-feature reduction — softdepend integration with those specific protection
-plugins does not currently work. See `PLAN.md` for the itemized list and
-what it would take to restore each one (repoint to each plugin's current
-Maven coordinates and re-enable).
+The original 2018 source integrated with 9 land-claim plugins, all pinned to
+long-dead or version-incompatible Maven coordinates (e.g. `WorldGuard
+6.1.1-SNAPSHOT`, `Towny 0.92.0.0`, `PlotSquared 18.05.01`). Each was
+re-evaluated against its *current* Maven coordinate rather than assumed dead:
+
+- **Revived, live in `hooks/`**: `HookWorldGuard`, `HookGriefPrevention`,
+  `HookRedProtect`, `HookASkyBlock` (moved back unchanged — confirmed
+  API-compatible with their current coordinates as-is) and `HookTowny`,
+  `HookPlotSquared` (rewritten against their modern APIs — `TownyAPI`
+  singleton; PlotSquared's `com.plotsquared.core`/`com.plotsquared.bukkit`
+  split). Each is declared in `plugin.yml`'s `softdepend:` list and
+  registered in `EpicFurnacesPlugin.onEnable()` only behind a
+  `pluginManager.getPlugin("...") != null` guard, so the plugin enables
+  cleanly whether zero, some, or all six are present. See `build.gradle.kts`
+  for the exact Maven coordinates/repos and the transitive-dependency
+  exclusions each one needed to resolve cleanly against `paper-api`.
+- **Dropped, relocated to `legacy-hooks/` (not compiled, not deleted)**:
+  `HookFactions`, `HookKingdoms`, `HookUSkyBlock` — no live/resolvable Maven
+  coordinate exists for any of them (Kingdoms has none at all; Factions/
+  uSkyBlock's coordinates pull dead transitive dependencies with no viable
+  substitute). This is a real, intentional feature reduction for these
+  three specifically.
+
+See `PLAN.md` ("Protection-plugin hooks: revive vs. drop") for the full
+per-hook evidence table, and its "Test coverage" exclusions table for why
+each hook's actual `canBuild()` business logic (as opposed to the
+registration guard) isn't unit-tested.
 
 ## Platforms
 
 This is Bukkit-API software. "Platform" here means Bukkit-API server
 implementations, not mod loaders:
 
-- **Paper** (primary target) — and by API compatibility, **Purpur** and
-  **Folia** (Folia's furnace/block-tick model differs; not smoke-tested).
+- **Paper** (primary target) — and by API compatibility, **Purpur**.
+  **Folia is analyzed and NOT supported**: `EFurnace.upgradeFinal()` (two
+  call sites) and `EFurnace.updateCook()` make Bukkit scheduler calls that
+  assume safe cross-region access to a furnace's block/inventory state,
+  which Folia's region-threaded model does not guarantee. `plugin.yml` does
+  **not** set `folia-supported: true`. See `PLAN.md` ("Folia compatibility")
+  for the full verdict; the one mitigation applied regardless (switching
+  `EFurnaceManager`/`PlayerDataManager` to `ConcurrentHashMap`) reduces one
+  hazard class but does not by itself make the plugin Folia-safe.
 - **Spigot** — the plugin only uses stable Bukkit/Spigot API, no Paper-only
   calls, so it should run on plain Spigot too, just without any Paper-only
   optimizations (none are currently used).
@@ -138,6 +161,27 @@ See `PLAN.md` for the version matrix and per-version build status.
   memory of "the latest MC version" — query
   `https://fill.papermc.io/v3/projects/paper` or the maven-metadata.xml for
   `paper-api` at build time; Minecraft is calendar-versioned now (26.x).
+
+### Tests
+
+```bash
+./gradlew test jacocoTestReport   # run tests, generate coverage report
+./gradlew check                   # test + jacocoTestCoverageVerification (enforced 100% bar, see PLAN.md)
+```
+
+- JUnit 6 (via `org.junit:junit-bom:6.1.3` — JUnit 5 ended at 5.14.4) +
+  MockBukkit (`org.mockbukkit.mockbukkit:mockbukkit-v26.1.2:4.115.0`) for
+  anything touching `org.bukkit.*`; plain JUnit for pure logic.
+- The test classpath deliberately pins `paper-api:26.1.2.build.74-stable`
+  independently of whatever `-PpaperApiVersion` the main source set is
+  compiled against — MockBukkit ships a bundled registry-data snapshot
+  captured from that exact Paper build, and letting a newer `paper-api`
+  (e.g. the default 26.2 the main jar targets) leak onto the test classpath
+  produces a real `InternalDataLoadException` at test runtime, not a
+  hypothetical concern. See `build.gradle.kts`'s dependency block comments.
+- Coverage report/enforced bar, exclusions, and the one documented
+  exception (`utils.Methods`, capped at 11 missed lines) are in `PLAN.md`
+  ("Test coverage").
 
 ## Porting notes for whoever touches this next
 

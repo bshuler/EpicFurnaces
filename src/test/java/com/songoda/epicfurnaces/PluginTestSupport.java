@@ -2,6 +2,7 @@ package com.songoda.epicfurnaces;
 
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
+import org.mockbukkit.mockbukkit.world.WorldMock;
 
 /**
  * Shared MockBukkit fixture, loaded exactly once per test JVM rather than
@@ -23,6 +24,7 @@ public final class PluginTestSupport {
 
     private static ServerMock server;
     private static EpicFurnacesPlugin plugin;
+    private static WorldMock world;
 
     private PluginTestSupport() {
     }
@@ -38,5 +40,18 @@ public final class PluginTestSupport {
     public static synchronized ServerMock server() {
         plugin();
         return server;
+    }
+
+    /**
+     * A single world shared by every test that needs one, created lazily on
+     * first use. Shared rather than created per test class so tests don't
+     * have to coordinate unique world names against MockBukkit's
+     * addSimpleWorld(String), which errors on a duplicate name.
+     */
+    public static synchronized WorldMock world() {
+        if (world == null) {
+            world = server().addSimpleWorld("epicfurnaces-test-world");
+        }
+        return world;
     }
 }

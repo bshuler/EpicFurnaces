@@ -3,8 +3,13 @@ package com.songoda.epicfurnaces;
 import com.google.common.base.Preconditions;
 import com.songoda.epicfurnaces.api.EpicFurnaces;
 import com.songoda.epicfurnaces.api.furnace.Furnace;
-import com.songoda.epicfurnaces.api.utils.ClaimableProtectionPluginHook;
 import com.songoda.epicfurnaces.api.utils.ProtectionPluginHook;
+import com.songoda.epicfurnaces.hooks.HookASkyBlock;
+import com.songoda.epicfurnaces.hooks.HookGriefPrevention;
+import com.songoda.epicfurnaces.hooks.HookPlotSquared;
+import com.songoda.epicfurnaces.hooks.HookRedProtect;
+import com.songoda.epicfurnaces.hooks.HookTowny;
+import com.songoda.epicfurnaces.hooks.HookWorldGuard;
 import com.songoda.epicfurnaces.command.CommandManager;
 import com.songoda.epicfurnaces.furnace.EFurnaceManager;
 import com.songoda.epicfurnaces.furnace.ELevelManager;
@@ -41,7 +46,6 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
     private ConfigWrapper furnaceRecipeFile = new ConfigWrapper(this, "", "Furnace Recipes.yml");
 
     private List<ProtectionPluginHook> protectionHooks = new ArrayList<>();
-    private ClaimableProtectionPluginHook factionsHook, townyHook, aSkyblockHook, uSkyblockHook;
 
     private static EpicFurnacesPlugin INSTANCE;
 
@@ -114,11 +118,20 @@ public class EpicFurnacesPlugin extends JavaPlugin implements EpicFurnaces {
         pluginManager.registerEvents(new ChatListeners(this), this);
         pluginManager.registerEvents(new InventoryListeners(this), this);
 
-        // Protection-plugin hooks (ASkyBlock, Factions, GriefPrevention,
-        // Kingdoms, PlotSquared, RedProtect, Towny, USkyBlock, WorldGuard)
-        // are not registered here - their integrations depend on long-dead
-        // or version-incompatible third-party Maven coordinates and have
-        // been relocated, unbuilt, to legacy-hooks/. See PLAN.md.
+        // Protection-plugin hooks: 6 of the original 9 (WorldGuard,
+        // GriefPrevention, RedProtect, ASkyBlock, Towny, PlotSquared) have
+        // live Maven coordinates and are registered as runtime softdepends
+        // below, guarded by a getPlugin(...) != null check so this plugin
+        // still enables cleanly with none, some, or all of them present or
+        // absent. The other 3 (Factions, Kingdoms, uSkyBlock) depend on
+        // long-dead or unresolvable third-party coordinates and remain
+        // relocated, unbuilt, under legacy-hooks/. See PLAN.md.
+        if (pluginManager.getPlugin("WorldGuard") != null) register(HookWorldGuard::new);
+        if (pluginManager.getPlugin("GriefPrevention") != null) register(HookGriefPrevention::new);
+        if (pluginManager.getPlugin("RedProtect") != null) register(HookRedProtect::new);
+        if (pluginManager.getPlugin("ASkyBlock") != null) register(HookASkyBlock::new);
+        if (pluginManager.getPlugin("Towny") != null) register(HookTowny::new);
+        if (pluginManager.getPlugin("PlotSquared") != null) register(HookPlotSquared::new);
 
         console.sendMessage(Methods.formatText("&a============================="));
     }

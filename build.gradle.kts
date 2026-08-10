@@ -1,3 +1,4 @@
+import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 
 plugins {
@@ -27,6 +28,17 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://jitpack.io")
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+    // WorldGuard/WorldEdit (hooks/HookWorldGuard.java).
+    maven("https://maven.enginehub.org/repo/")
+    // RedProtect-Spigot (hooks/HookRedProtect.java) transitively needs
+    // Sponge's Configurate library.
+    maven("https://repo.spongepowered.org/repository/maven-public/")
+    // Towny (hooks/HookTowny.java) is not published to Maven Central or
+    // JitPack; this is its own maintainer-run repository.
+    maven("https://repo.glaremasters.me/repository/towny/")
+    // ASkyBlock (hooks/HookASkyBlock.java) is published here, not to Maven
+    // Central or JitPack.
+    maven("https://repo.codemc.org/repository/maven-public/")
 }
 
 dependencies {
@@ -39,6 +51,50 @@ dependencies {
     compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
         exclude(group = "org.bukkit", module = "bukkit")
     }
+
+    // Protection-plugin hooks (com/songoda/epicfurnaces/hooks/) - each is
+    // registered as a runtime softdepend (see plugin.yml and
+    // EpicFurnacesPlugin#onEnable), guarded by a
+    // Bukkit.getPluginManager().getPlugin(...) null check, so none of these
+    // are required at runtime; compileOnly is correct. See PLAN.md/CLAUDE.md
+    // for the per-hook Maven-coordinate research (what resolves cleanly,
+    // what doesn't, and why) behind this list - 3 of the original 9 hooks
+    // (Factions, Kingdoms, uSkyBlock) could not be revived and remain
+    // unbuilt under legacy-hooks/ for that reason.
+    // worldguard-bukkit/-core/worldedit-core each declare a `strictly`
+    // Guava/Gson version constraint under a "Mojang provides Guava/Gson"
+    // rationale, pinned to the Minecraft version WorldGuard 7.0.18 actually
+    // targets. That strict pin is incompatible with the much newer Guava/
+    // Gson paper-api's own Gradle module metadata requires for this
+    // project's target (26.2). Both libraries are compileOnly and never
+    // shaded into the jar (see shadowJar below - only VaultAPI's economy
+    // interfaces are relocated at runtime; everything compileOnly here is
+    // provided by the server/hooked plugin at runtime), so excluding these
+    // transitive copies and compiling against paper-api's own Guava/Gson is
+    // safe: none of the WorldGuard/RedProtect/PlotSquared API surface this
+    // project actually calls exposes a Guava/Gson type in its signature.
+    val excludeShadedRuntimeLibs: ExternalModuleDependency.() -> Unit = {
+        exclude(group = "com.google.guava", module = "guava")
+        exclude(group = "com.google.code.gson", module = "gson")
+    }
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.18", excludeShadedRuntimeLibs)
+    compileOnly("com.github.TechFortress:griefprevention:18.0.0")
+    compileOnly("io.github.fabiozumbi12.RedProtect:RedProtect-Spigot:8.1.2") {
+        // Confirmed dead: UltimateChat's real continuation republished under
+        // a different groupId/version (io.github.fabiozumbi12.UltimateChat),
+        // and RedProtect's canBuild() check never touches this dependency.
+        exclude(group = "br.net.fabiozumbi12.UltimateChat", module = "UltimateFancy")
+        // Same rationale as VaultAPI's org.bukkit:bukkit exclusion above:
+        // this pulls a real, ancient org.spigotmc:spigot-api that conflicts
+        // with paper-api's spigot-api capability. RedProtectAPI/Region
+        // (the only classes hooks/HookRedProtect.java uses) live in
+        // RedProtect-Core, not in spigot-api itself.
+        exclude(group = "org.spigotmc", module = "spigot-api")
+        excludeShadedRuntimeLibs()
+    }
+    compileOnly("com.wasteofplastic:askyblock:3.0.9.4")
+    compileOnly("com.palmergames.bukkit.towny:towny:0.103.1.1")
+    compileOnly("com.intellectualsites.plotsquared:plotsquared-bukkit:7.5.13", excludeShadedRuntimeLibs)
 
     // Test infrastructure. JUnit (Jupiter) for everything; MockBukkit for
     // simulating a Bukkit server so plugin/listener/manager code touching
@@ -108,8 +164,10 @@ tasks.test {
 val jacocoExcludes = listOf(
     "com/songoda/epicfurnaces/EpicFurnacesPlugin*",
     "com/songoda/epicfurnaces/Locale*",
-    "com/songoda/epicfurnaces/References*",
-    "com/songoda/epicfurnaces/furnace/EFurnace*",
+    // Precise class match, NOT a "EFurnace*" wildcard - that would also
+    // match (and silently exempt from the 100% bar) EFurnaceManager, which
+    // is genuinely tested below.
+    "com/songoda/epicfurnaces/furnace/EFurnace.class",
     "com/songoda/epicfurnaces/utils/SettingsManager*",
     "com/songoda/epicfurnaces/listeners/**",
     "com/songoda/epicfurnaces/command/**",
@@ -137,10 +195,30 @@ tasks.jacocoTestCoverageVerification {
         })
     )
     violationRules {
+        // Every included class must be 100% line-covered, with one
+        // documented exception: Methods.java contains four
+        // `catch (Exception e) { Debugger.runReport(e); }` defensive
+        // blocks wrapping Bukkit/Paper calls (config lookups, DyeColor/
+        // Material lookups, Locale message formatting) that cannot throw
+        // under any reachable, legitimately-testable call path - forcing
+        // them would require reflection or static-mocking hacks, which the
+        // project's testing standard explicitly rules out. See PLAN.md
+        // ("Test coverage" / exclusions) for the exact 11 line numbers.
         rule {
+            element = "CLASS"
+            excludes = listOf("com.songoda.epicfurnaces.utils.Methods")
             limit {
                 counter = "LINE"
                 minimum = "1.00".toBigDecimal()
+            }
+        }
+        rule {
+            element = "CLASS"
+            includes = listOf("com.songoda.epicfurnaces.utils.Methods")
+            limit {
+                counter = "LINE"
+                value = "MISSEDCOUNT"
+                maximum = "11".toBigDecimal()
             }
         }
     }
