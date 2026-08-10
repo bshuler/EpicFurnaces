@@ -7,6 +7,5 @@ api-version: "26.2"
 commands:
   EpicFurnaces:
     description: I have no idea.
-    default: true
     aliases: [ef]
     usage: /<command> [reload]
