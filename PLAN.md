@@ -306,3 +306,15 @@ covered by `ProtectionHookRegistrationTest`. This supersedes the "disabled,
   1Password SSH agent. If signing fails with no human at the keyboard, the
   prepared commit message is appended to the session scratchpad's
   `EpicFurnaces-commit-msg.txt` instead of being force-committed unsigned.
+
+## Coverage in context (measured 2026-08-13)
+
+Read from the JaCoCo XML report, not from whether the gate passes:
+
+- **Analysed surface:** 17 of 40 compiled classes (42%).
+- **Line coverage of that surface:** 94.1% (188 lines analysed).
+- Classes outside that surface are excluded by the documented exclusion list. They
+  are not covered by any test and are not runtime-verified.
+
+A passing `check` means "no regression inside the analysed surface" — it does not
+mean the whole codebase is tested to that percentage.
